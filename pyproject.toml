@@ -1,0 +1,32 @@
+[project]
+name = "ai-mcdm-invest"
+version = "0.1.0"
+description = "Does adding intelligence to MCDM improve a risk-aware stock ranking?"
+authors = [
+    { name = "Imad Baghdad", email = "129902375+whoimad@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "pandas>=3.1.1",
+    "pyarrow>=26.0.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.8,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.5",
+    "ty>=0.0.101",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "PD"]

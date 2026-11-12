@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Lint
+        run: make lint
+      - name: Test
+        run: make test
+      - name: Rebuild on the fixture dataset
+        run: make all
+        env:
+          AI_MCDM_RAW_DIR: tests/fixtures/raw
