@@ -5,7 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from ai_mcdm_invest.data.raw_manifest import RawDataChanged, record_manifest, verify_raw_files
+from ai_mcdm_invest.config import Settings
+from ai_mcdm_invest.data.raw_manifest import (
+    RawDataChanged,
+    raw_files_read,
+    record_manifest,
+    verify_raw_files,
+)
 
 FILES = ["2014 2018/2014_Financial_Data.csv", "sec/company_tickers.json"]
 
@@ -75,3 +81,10 @@ def test_an_unlisted_file_beside_listed_ones_stops_the_build(raw_copy: Path) -> 
 def test_a_missing_raw_folder_names_the_setting(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="AI_MCDM_RAW_DIR"):
         verify_raw_files(tmp_path / "nowhere", {"files": {}})
+
+
+def test_the_files_read_include_the_submissions_and_the_corpus(fixture_raw_dir: Path) -> None:
+    files = raw_files_read(Settings(raw_dir=fixture_raw_dir))
+
+    assert "sec/submissions.zip" in files
+    assert "edgar_corpus/2016_train.jsonl" in files

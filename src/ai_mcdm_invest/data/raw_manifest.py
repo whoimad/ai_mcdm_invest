@@ -25,7 +25,12 @@ class RawDataChanged(Exception):
 
 def raw_files_read(settings: Settings) -> list[str]:
     """Every file in the raw folders the build reads, relative to `settings.raw_dir`."""
-    folders = [settings.raw_panel_dir, settings.raw_sec_dir, settings.raw_frames_dir]
+    folders = [
+        settings.raw_panel_dir,
+        settings.raw_sec_dir,
+        settings.raw_frames_dir,
+        settings.raw_corpus_dir,
+    ]
     paths = [path for folder in folders for path in folder.iterdir() if path.is_file()]
     return sorted(path.relative_to(settings.raw_dir).as_posix() for path in paths)
 

@@ -26,6 +26,41 @@
    "sha256": "cff03ff890cce26d0dfc071fb19a41f54b41242a62e2bdc38f9bb83bae63c2fa",
    "modified": "2026-11-13"
   },
+  "edgar_corpus/2012_train.jsonl": {
+   "bytes": 3718,
+   "sha256": "91acba17465120ef8162f99020dc7b7628ba00ccd36563b49efae2bd9ebd6003",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2013_train.jsonl": {
+   "bytes": 93166,
+   "sha256": "90a2b5a16a466855b4fc725d6132e7daf6f238dbb0a3145cddfa37d1e4930f15",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2014_train.jsonl": {
+   "bytes": 93166,
+   "sha256": "34e1a06126f31ee0fd9f9fc9dd6219be187937c65e3f5f522a311a68cf0a30e3",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2015_train.jsonl": {
+   "bytes": 89677,
+   "sha256": "54cf83399fa65f7b252148a98b6cd3de200935224a234c6d200aa54ac3660ec1",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2016_train.jsonl": {
+   "bytes": 92551,
+   "sha256": "2977f39701934b4aaf6f6d0636e62c40c834cba22b8ed5a3f297e159e11f5655",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2017_train.jsonl": {
+   "bytes": 89419,
+   "sha256": "4c191b7d8a94df3d17bd71dc3e8511749f61bcd2c63a15215162daaa4bdbf9f8",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2018_train.jsonl": {
+   "bytes": 89428,
+   "sha256": "a5f2028ec8f846e0f9b1af82ecd231c0e072a3c55a2685d01403eccd0e5eb3b5",
+   "modified": "2026-11-13"
+  },
   "sec/company_tickers.json": {
    "bytes": 1642,
    "sha256": "24ea072d1066ef955824acc08345ee7757fbe3e3d2133757bd817efa86269a8e",
@@ -33,77 +68,82 @@
   },
   "sec/frames/Assets_CY2014Q4I.json": {
    "bytes": 2534,
-   "sha256": "af4cb138f1704907f06b59135ca8f92831c794ca5ccf9b89ee983fd4f7595375",
+   "sha256": "58f72b07a536953bf1dce55d69d06ff19d886a99f57ef669ead3ba0bed25c3fa",
    "modified": "2026-11-13"
   },
   "sec/frames/Assets_CY2015Q4I.json": {
    "bytes": 2534,
-   "sha256": "6b8100f5acf02e4f5ce53696951248f206aca9f593fe29fa4a246e04a9e6c015",
+   "sha256": "511b8780dae44a8a9334e291d22a4bd8b7b92d44be2477fc8366b4d66f6c462c",
    "modified": "2026-11-13"
   },
   "sec/frames/Assets_CY2016Q4I.json": {
    "bytes": 2534,
-   "sha256": "3a7411edf6e0a9155722ec8b1817f97ee5697f738a9e9e79c08cea403e0ec6f0",
+   "sha256": "7785eefb709098341ce3b423cafd7011413f89505a554f904cb5e5505b59de39",
    "modified": "2026-11-13"
   },
   "sec/frames/Assets_CY2017Q4I.json": {
    "bytes": 2534,
-   "sha256": "d808a118f199b2cdd9116460f4325275f03d6a92d279fd08f774fe77f3be71a4",
+   "sha256": "4c2d64d338aec6d880a241a6b7142a2fb90471703ff7adba6ccadf9fdecdf0f2",
    "modified": "2026-11-13"
   },
   "sec/frames/Assets_CY2018Q4I.json": {
    "bytes": 2534,
-   "sha256": "b5245e7e162787c0b8b64de044890c26e1515c5884649dffaffe6a34f7ced160",
+   "sha256": "be48eed12abc2a8dd74c32d0c1d23dedd493df3635192abc45ea3b9be5a68dc7",
    "modified": "2026-11-13"
   },
   "sec/frames/NetIncomeLoss_CY2014.json": {
    "bytes": 3178,
-   "sha256": "73061503ea1ebe7fb5b367a5754fe3aedfbd2598c24ae72013dd0f31187faa2d",
+   "sha256": "e2baa7123ca1caef672581b5dc8c1ec15bfb5e5a8edd0da05665d63defe28da5",
    "modified": "2026-11-13"
   },
   "sec/frames/NetIncomeLoss_CY2015.json": {
    "bytes": 3178,
-   "sha256": "124038c7d76ec86a1292d40695a06262f64ebdcc5c8684855a8011efafcad2c4",
+   "sha256": "8f507561e97a31942e45b869edd5f1dd12a8858a36978c336b0884820455a306",
    "modified": "2026-11-13"
   },
   "sec/frames/NetIncomeLoss_CY2016.json": {
    "bytes": 3178,
-   "sha256": "0b16dd6a4a72f207ec13d35fb4c66b77bfe60b98c86633b886d94d4d43a728ce",
+   "sha256": "6af728ed6dd91afa55dac17ab475407b11e8ad01abad06f1530feb70bb4e570a",
    "modified": "2026-11-13"
   },
   "sec/frames/NetIncomeLoss_CY2017.json": {
    "bytes": 3178,
-   "sha256": "b678b7ccec8b16880d0893a4eac1bba6f01f890cccd89a7f58ef688dfeafba5d",
+   "sha256": "486c79f67c790b11a2d62903b8fcb35af33cf489ce111c178a749abd1841eb44",
    "modified": "2026-11-13"
   },
   "sec/frames/NetIncomeLoss_CY2018.json": {
    "bytes": 3178,
-   "sha256": "2995259b2f4db58c7b7548747e1f67cae569427190e91dee30122146a45c3146",
+   "sha256": "189418591dfcbac3c6dd1c7952843354f4a424bbc063301d222759fb28bfcbde",
    "modified": "2026-11-13"
   },
   "sec/frames/Revenues_CY2014.json": {
    "bytes": 3204,
-   "sha256": "1a537af02bb6ffe3ac317c26f2de65a5579e3444f0527cd38db2c48e713672b0",
+   "sha256": "8e4aeae89dcc2690c1b6bc99645ab329167b76052eba40654783b56d49c1fc1d",
    "modified": "2026-11-13"
   },
   "sec/frames/Revenues_CY2015.json": {
    "bytes": 3204,
-   "sha256": "4634dc1bbad7c5b0b423082fe3afdc171b833b3814e82ee1a883ec3d403e0653",
+   "sha256": "d1353ea23a038080488099511640e23e04f70426fb2ebf61ddecbd1d158dfba8",
    "modified": "2026-11-13"
   },
   "sec/frames/Revenues_CY2016.json": {
    "bytes": 3204,
-   "sha256": "33de316aa86b08fad8f43e021f2e361e6fc1ad02bf9355ff61224fb8227fae6a",
+   "sha256": "1003adf8398a682e8da210525d9794b773d1a3a33fd895e8520aca73488301cd",
    "modified": "2026-11-13"
   },
   "sec/frames/Revenues_CY2017.json": {
    "bytes": 3204,
-   "sha256": "f3d58ceb2d1e5cfbcc4e921efda21cb490a848c68110fc5de119fe0a46ee3a75",
+   "sha256": "fd0f0ccffcf0741a0c809a869e7a65ff6f24c992021feb7391c92be96b159c88",
    "modified": "2026-11-13"
   },
   "sec/frames/Revenues_CY2018.json": {
    "bytes": 3204,
-   "sha256": "fff52ed5ac5dddf96a65dd1d3bd9ea9576dde4e76d7a56944365c0f2d6ea4328",
+   "sha256": "eb6994150091e1705c961a6ca42439ca6661e131190ca9478ecfe426f7f4a2f1",
+   "modified": "2026-11-13"
+  },
+  "sec/submissions.zip": {
+   "bytes": 9434,
+   "sha256": "f081c6301b5255cdfb8bd6276e465dd0d8293077cc4f7d248adb237f00c6dafd",
    "modified": "2026-11-13"
   }
  }

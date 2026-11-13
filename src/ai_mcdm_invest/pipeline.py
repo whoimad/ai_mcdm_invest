@@ -6,6 +6,8 @@ Run with `make all` or `uv run python -m ai_mcdm_invest.pipeline`.
 import pandas as pd
 
 from ai_mcdm_invest.config import Settings
+from ai_mcdm_invest.data.corpus import load_corpus
+from ai_mcdm_invest.data.filings import build_filings
 from ai_mcdm_invest.data.join_report import (
     check_join_coverage,
     join_steps,
@@ -15,6 +17,7 @@ from ai_mcdm_invest.data.joined import join_panel
 from ai_mcdm_invest.data.links import link_companies, load_ticker_ciks, load_xbrl_figures
 from ai_mcdm_invest.data.panel import clean_panel, load_raw_panel
 from ai_mcdm_invest.data.raw_manifest import load_manifest, verify_raw_files
+from ai_mcdm_invest.data.submissions import load_submissions
 from ai_mcdm_invest.tables import write_table
 
 
@@ -52,6 +55,17 @@ def run(settings: Settings) -> None:
     path = write_table(joined, settings.processed_dir, "panel")
     print(f"joined panel: {len(joined)} rows, written to {path}")
 
+    ciks = set(joined["cik"])
+    filings = build_filings(
+        joined,
+        links,
+        load_submissions(settings.submissions_path, ciks),
+        load_corpus(settings.raw_corpus_dir, ciks),
+    )
+    path = write_table(filings, settings.processed_dir, "filings")
+    print(f"filings table: {len(filings)} rows, written to {path}")
+    print(_filing_counts(filings).to_string())
+
 
 def _link_counts(links: pd.DataFrame, clean: pd.DataFrame) -> pd.DataFrame:
     """Rows per fiscal year by link method, with ambiguous matches and tail losers."""
@@ -62,6 +76,17 @@ def _link_counts(links: pd.DataFrame, clean: pd.DataFrame) -> pd.DataFrame:
     counts["tail_linked"] = linked.groupby("fiscal_year")["tail_loss"].sum()
     counts["tail_total"] = table.groupby("fiscal_year")["tail_loss"].sum()
     return counts.fillna(0).astype(int)
+
+
+def _filing_counts(filings: pd.DataFrame) -> pd.DataFrame:
+    """Rows per fiscal year with a 10-K, with its text, and with Items 1A, 7 and 8."""
+    has_items = filings[["has_item_1A", "has_item_7", "has_item_8"]].fillna(False).all(axis=1)
+    counts = filings.assign(
+        rows=1,
+        has_10k=filings["filing_date"].notna(),
+        items_1a_7_8=has_items,
+    )
+    return counts.groupby("fiscal_year")[["rows", "has_10k", "in_corpus", "items_1a_7_8"]].sum()
 
 
 def main() -> None:

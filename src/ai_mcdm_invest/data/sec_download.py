@@ -1,17 +1,22 @@
-"""Download the SEC files the company-link stage reads. Run with `make fetch`.
+"""Download the raw files the rebuild reads besides the panel. Run with `make fetch`.
 
 This is the only code that touches the network. It adds files under
-`<raw_dir>/sec/` and never rewrites one that is already there, so the rebuild
-(`make all`) stays offline and repeatable.
+`<raw_dir>/sec/` and `<raw_dir>/edgar_corpus/` and never rewrites one that is
+already there, so the rebuild (`make all`) stays offline and repeatable.
 
 Files:
-- `company_tickers.json`: the SEC's current ticker list.
-- `frames/<tag>_<period>.json`: one XBRL "frame" per tag and calendar period,
-  holding that figure for every filer that reported it.
+- `sec/company_tickers.json`: the SEC's current ticker list.
+- `sec/frames/<tag>_<period>.json`: one XBRL "frame" per tag and calendar
+  period, holding that figure for every filer that reported it.
+- `sec/submissions.zip`: every filer's filing history (forms, filing and
+  report dates), about 1.6 GB.
+- `edgar_corpus/<year>_<split>.jsonl`: EDGAR-CORPUS 10-Ks split by Item, from
+  Hugging Face, about 1.8 GB a year.
 """
 
 import json
 import os
+import shutil
 import time
 import urllib.error
 import urllib.request
@@ -22,6 +27,10 @@ from ai_mcdm_invest.data.panel import FISCAL_YEARS
 
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 FRAME_URL = "https://data.sec.gov/api/xbrl/frames/us-gaap/{tag}/USD/{period}.json"
+SUBMISSIONS_URL = "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip"
+CORPUS_URL = (
+    "https://huggingface.co/datasets/eloukas/edgar-corpus/resolve/main/{year}/{split}.jsonl"
+)
 
 ASSETS_TAG = "Assets"
 NET_INCOME_TAG = "NetIncomeLoss"
@@ -40,6 +49,12 @@ REVENUE_TAGS = [
 # frame. Hence one extra year before the panel's first.
 FRAME_YEARS = range(FISCAL_YEARS.start - 1, FISCAL_YEARS.stop)
 
+# Corpus labels are usually the fiscal year covered but can be a year off
+# either way, and fiscal 2014 needs the prior year's 10-K (periods ending in
+# 2013) for the Item 1A comparison. Hence labels 2012 to 2019.
+CORPUS_YEARS = range(FISCAL_YEARS.start - 2, FISCAL_YEARS.stop + 1)
+CORPUS_SPLITS = ["train", "validate", "test"]
+
 # The SEC asks automated clients to identify themselves and to stay under ten
 # requests a second.
 DEFAULT_USER_AGENT = "academic research script contact@example.com"
@@ -56,7 +71,7 @@ def frame_names() -> list[tuple[str, str]]:
 
 
 def fetch(settings: Settings) -> None:
-    """Download whichever SEC files are not yet under `settings.raw_sec_dir`."""
+    """Download whichever raw files are not yet under `settings.raw_dir`."""
     user_agent = os.environ.get("SEC_USER_AGENT", DEFAULT_USER_AGENT)
     targets = [(TICKERS_URL, settings.ticker_list_path)]
     targets += [
@@ -68,6 +83,31 @@ def fetch(settings: Settings) -> None:
     for url, path in missing:
         _download(url, path, user_agent)
         time.sleep(SECONDS_BETWEEN_REQUESTS)
+
+    large = [(SUBMISSIONS_URL, settings.submissions_path)]
+    large += [
+        (
+            CORPUS_URL.format(year=year, split=split),
+            settings.raw_corpus_dir / f"{year}_{split}.jsonl",
+        )
+        for year in CORPUS_YEARS
+        for split in CORPUS_SPLITS
+    ]
+    for url, path in large:
+        if not path.exists():
+            _download_large(url, path, user_agent)
+
+
+def _download_large(url: str, path: Path, user_agent: str) -> None:
+    """Stream `url` to `path` through a `.part` file, so a broken download leaves no file."""
+    part = path.with_name(path.name + ".part")
+    part.parent.mkdir(parents=True, exist_ok=True)
+    request = urllib.request.Request(url, headers={"User-Agent": user_agent})
+    print(f"  downloading {path.name} ...", flush=True)
+    with urllib.request.urlopen(request, timeout=120) as response, part.open("wb") as file:
+        shutil.copyfileobj(response, file, length=1 << 20)
+    part.rename(path)
+    print(f"  downloaded {path.name}")
 
 
 def _download(url: str, path: Path, user_agent: str) -> None:

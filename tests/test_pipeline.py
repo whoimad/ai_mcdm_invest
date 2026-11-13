@@ -77,6 +77,17 @@ def test_rebuild_writes_the_joined_panel_and_the_join_report(
     assert report.startswith("# Join report")
 
 
+def test_rebuild_writes_the_filings_table(fixture_raw_dir: Path, tmp_path: Path) -> None:
+    run(fixture_settings(fixture_raw_dir, tmp_path))
+
+    filings = pd.read_parquet(tmp_path / "processed" / "filings.parquet")
+    panel = pd.read_parquet(tmp_path / "processed" / "panel.parquet")
+    assert len(filings) == len(panel)
+    assert filings["filing_date"].notna().sum() == len(panel) - 1  # QUBC 2017 filed none
+    assert filings["in_corpus"].sum() == len(panel) - 2  # nor is PAPA 2015 in the corpus
+    assert (tmp_path / "processed" / "filings.csv").exists()
+
+
 def test_rebuild_stops_before_the_joined_panel_when_coverage_is_low(
     fixture_raw_dir: Path, tmp_path: Path, monkeypatch
 ) -> None:

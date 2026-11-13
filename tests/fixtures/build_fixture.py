@@ -38,14 +38,40 @@ files under CIK 1000 + i, and XBRL frames report its exact figures, except:
 - HOTL: its ticker now belongs to CIK 9004, and its figures match two other
   filers (its own and CIK 9005), neither of them 9004: unlinked.
 - ECHO 2014 has no revenue in the panel, so it matches on net income.
+- MIKE's fiscal year ends on 31 January: its XBRL figures end then.
+
+SEC submissions (`raw/sec/submissions.zip`, the bulk file's layout) list a
+10-K for every core filer and each period ending 2013-2018, filed on 2 March
+of the next year, plus a 10-Q each year. Exceptions:
+- ALFA also filed a 10-K/A for fiscal 2016 on 2017-06-01, to be ignored.
+- MIKE files on 15 April, and its filings before 2016 sit in an older page
+  (`CIK0000001012-submissions-001.json`) as in the real bulk file.
+- OSCR filed a late-filing notice (NT 10-K) for fiscal 2016 on 2017-03-16 and
+  the 10-K on 2017-04-14.
+- QUBC filed no 10-K for fiscal 2017.
+
+EDGAR-CORPUS (`raw/edgar_corpus/<label>_train.jsonl`) holds one record per
+10-K above, labelled with the year its period ends, except:
+- MIKE is labelled a year earlier (its year ending January 2017 is labelled
+  2016, as the real corpus does for some retailers), so picking by label
+  would take the wrong filing.
+- PAPA's fiscal 2015 10-K is missing, so fiscal 2016 has no prior Item 1A.
+- NOVM 2016: Item 1A reads "Not applicable." and Item 8 points to Item 15.
+- ROMO 2015: going-concern wording in Items 1A and 8.
+- KILO 2016: one of its four Item 1A paragraphs is new and one is reworded
+  in one sentence of three; KILO keeps that text afterwards.
+Every Item 1 is exactly 2,000 characters (500 estimated tokens).
 """
 
 import json
+import zipfile
+from datetime import date, timedelta
 from pathlib import Path
 
 RAW_DIR = Path(__file__).parent / "raw"
 RAW_PANEL_DIR = RAW_DIR / "2014 2018"
 RAW_SEC_DIR = RAW_DIR / "sec"
+RAW_CORPUS_DIR = RAW_DIR / "edgar_corpus"
 
 CORE = [
     "ALFA", "BRVO", "CHRL", "DLTA", "ECHO", "FXTR", "GOLF", "HOTL", "INDG",
@@ -138,15 +164,184 @@ def frames(year: int) -> dict[str, dict]:
         rev, ni, total_assets, _, _ = figures(i, year)
         filers = [cik(ticker)] + ([SAME_FIGURES_AS[ticker]] if ticker in SAME_FIGURES_AS else [])
         for filer in filers:
-            point = {"cik": filer, "entityName": f"{ticker} Corp", "end": f"{year}-12-31"}
+            end = period_end(ticker, year)
+            start = (end.replace(year=year - 1) + timedelta(days=1)).isoformat()
+            point = {"cik": filer, "entityName": f"{ticker} Corp", "end": end.isoformat()}
             assets.append(point | {"val": total_assets})
-            revenue.append(point | {"start": f"{year}-01-01", "val": rev})
-            net_income.append(point | {"start": f"{year}-01-01", "val": ni})
+            revenue.append(point | {"start": start, "val": rev})
+            net_income.append(point | {"start": start, "val": ni})
     return {
         f"Assets_CY{year}Q4I": {"data": assets},
         f"Revenues_CY{year}": {"data": revenue},
         f"NetIncomeLoss_CY{year}": {"data": net_income},
     }
+
+
+PERIOD_YEARS = range(2013, 2019)
+JANUARY_YEAR_END = {"MIKE"}
+NO_10K = {("QUBC", 2017)}
+NOT_IN_CORPUS = {("PAPA", 2015)}
+LABELLED_YEAR_EARLIER = {"MIKE"}
+ZIP_DATE = (2026, 11, 12, 0, 0, 0)
+
+
+def period_end(ticker: str, year: int) -> date:
+    """End of the fiscal year `year` (named, as the panel does, by the year it ends in)."""
+    return date(year, 1, 31) if ticker in JANUARY_YEAR_END else date(year, 12, 31)
+
+
+def filing_date(ticker: str, year: int) -> date:
+    if ticker in JANUARY_YEAR_END:
+        return date(year, 4, 15)
+    if (ticker, year) == ("OSCR", 2016):
+        return date(2017, 4, 14)
+    return date(year + 1, 3, 2)
+
+
+def submissions_filings(ticker: str) -> list[tuple[str, date, date]]:
+    """(form, filing date, report date) of every filing, newest first."""
+    filings = []
+    for year in PERIOD_YEARS:
+        end = period_end(ticker, year)
+        if (ticker, year) not in NO_10K:
+            filings.append(("10-K", filing_date(ticker, year), end))
+        filings.append(("10-Q", end - timedelta(days=50), end - timedelta(days=92)))
+    if ticker == "ALFA":
+        filings.append(("10-K/A", date(2017, 6, 1), date(2016, 12, 31)))
+    if ticker == "OSCR":
+        filings.append(("NT 10-K", date(2017, 3, 16), date(2016, 12, 31)))
+    return sorted(filings, key=lambda f: f[1], reverse=True)
+
+
+def columns(filings: list[tuple[str, date, date]], cik_number: int) -> dict:
+    """Filings in the bulk file's column layout."""
+    return {
+        "accessionNumber": [
+            f"0000{cik_number}-{d.year % 100:02d}-{n:06d}" for n, (_, d, _) in enumerate(filings)
+        ],
+        "filingDate": [d.isoformat() for _, d, _ in filings],
+        "reportDate": [r.isoformat() for _, _, r in filings],
+        "form": [form for form, _, _ in filings],
+    }
+
+
+def write_submissions(path: Path) -> None:
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for ticker in CORE:
+            number = cik(ticker)
+            filings = submissions_filings(ticker)
+            recent, older = filings, []
+            if ticker == "MIKE":
+                recent = [f for f in filings if f[1].year >= 2016]
+                older = [f for f in filings if f[1].year < 2016]
+            page = f"CIK{number:010d}-submissions-001.json"
+            body = {
+                "cik": f"{number:010d}",
+                "name": f"{ticker} Corp",
+                "filings": {
+                    "recent": columns(recent, number),
+                    "files": [{"name": page, "filingCount": len(older)}] if older else [],
+                },
+            }
+            entries = [(f"CIK{number:010d}.json", body)]
+            if older:
+                entries.append((page, columns(older, number)))
+            for name, content in entries:
+                info = zipfile.ZipInfo(name, date_time=ZIP_DATE)
+                archive.writestr(info, json.dumps(content), zipfile.ZIP_DEFLATED)
+
+
+def long_date(day: date) -> str:
+    return f"{day:%B} {day.day}, {day.year}"
+
+
+RISKS = [
+    "Our customers may reduce orders. Demand for our products is cyclical. "
+    "A downturn in the economy could reduce our revenue.",
+    "We depend on a few suppliers. A supplier failure could delay shipments. "
+    "Replacing a supplier would take many months.",
+    "Our debt limits our flexibility. We must meet covenants under our credit agreement. "
+    "A breach could make the debt due at once.",
+    "Regulation could raise our costs. New environmental rules may apply to our plants. "
+    "Compliance may require large capital spending.",
+]
+KILO_RISKS = [
+    RISKS[0],
+    RISKS[1].replace(
+        "Replacing a supplier would take many months.", "A new supplier would need a year."
+    ),
+    "A cyberattack could disrupt our systems. Attackers have targeted firms like ours. "
+    "Recovery could be slow and costly.",
+    RISKS[3],
+]
+GOING_CONCERN_RISK = (
+    "We have lost money for three years. We may need more capital. "
+    "If we cannot raise it, we may not be able to continue as a going concern."
+)
+
+
+def corpus_record(ticker: str, year: int) -> dict:
+    end = period_end(ticker, year)
+    now, before = long_date(end), long_date(end.replace(year=end.year - 1))
+    risks = KILO_RISKS if ticker == "KILO" and year >= 2016 else list(RISKS)
+    if (ticker, year) == ("ROMO", 2015):
+        risks = [*risks, GOING_CONCERN_RISK]
+    item_8 = (
+        f"Consolidated balance sheets as of {now} and {before}. "
+        f"Statements of operations for the years ended {now} and {before}. "
+        f"Statement of cash flows for the year ended {now}."
+    )
+    if (ticker, year) == ("ROMO", 2015):
+        item_8 += (
+            " These conditions raise substantial doubt about the Company's ability "
+            "to continue as a going concern."
+        )
+    item_1a = "\n".join(risks)
+    if (ticker, year) == ("NOVM", 2016):
+        item_1a = "Not applicable."
+        item_8 = (
+            "The financial statements required by this item are included in Item 15 "
+            "of this report, beginning on page F-1."
+        )
+    item_1 = "Item 1. Business\n" + f"{ticker} Corp makes and sells industrial goods. " * 60
+    sections = {
+        "section_1": item_1[:2000],
+        "section_1A": f"Item 1A. Risk Factors\n{item_1a}\nItem 1B.",
+        "section_3": (
+            "Item 3. Legal Proceedings\nThe company is party to routine litigation "
+            "incidental to its business, none of which is material.\nItem 4."
+        ),
+        "section_7": (
+            "Item 7. Management's Discussion and Analysis\nThis discussion covers the fiscal "
+            f"year ended {now} compared with the fiscal year ended {before}. Revenue grew "
+            f"during the year ended {now}.\nItem 7A."
+        ),
+        "section_8": f"Item 8. Financial Statements\n{item_8}\nItem 9.",
+        "section_9A": (
+            "Item 9A. Controls and Procedures\nManagement evaluated our disclosure controls "
+            f"and found them effective as of {now}.\nItem 9B."
+        ),
+        "section_15": "Item 15. Exhibits\nThe exhibits listed in the index are filed with it.",
+    }
+    names = ["1", "1A", "1B", "2", "3", "4", "5", "6", "7", "7A", "8", "9", "9A", "9B"]
+    names += ["10", "11", "12", "13", "14", "15"]
+    label = year - 1 if ticker in LABELLED_YEAR_EARLIER else year
+    record = {"filename": f"{cik(ticker)}_{label}.htm", "cik": str(cik(ticker)), "year": str(label)}
+    return record | {f"section_{n}": sections.get(f"section_{n}", "") for n in names}
+
+
+def corpus_files() -> dict[str, list[str]]:
+    """JSON lines per corpus file, `<label>_train.jsonl`."""
+    files: dict[str, list[str]] = {}
+    for ticker in CORE:
+        for year in PERIOD_YEARS:
+            if (ticker, year) in NO_10K or (ticker, year) in NOT_IN_CORPUS:
+                continue
+            record = corpus_record(ticker, year)
+            files.setdefault(f"{record['year']}_train.jsonl", []).append(
+                json.dumps(record, separators=(",", ":"))  # the real files are compact
+            )
+    return files
 
 
 if __name__ == "__main__":
@@ -158,3 +353,7 @@ if __name__ == "__main__":
         for name, frame in frames(year).items():
             (RAW_SEC_DIR / "frames" / f"{name}.json").write_text(json.dumps(frame, indent=1))
     (RAW_SEC_DIR / "company_tickers.json").write_text(json.dumps(ticker_list(), indent=1))
+    write_submissions(RAW_SEC_DIR / "submissions.zip")
+    RAW_CORPUS_DIR.mkdir(parents=True, exist_ok=True)
+    for name, lines in corpus_files().items():
+        (RAW_CORPUS_DIR / name).write_text("\n".join(lines) + "\n")

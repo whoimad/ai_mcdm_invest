@@ -26,6 +26,126 @@
    "sha256": "1a2b8e679ced373a08f4431faf7c78810cfb669bcc22dc2d9875869202d128f4",
    "modified": "2020-01-18"
   },
+  "edgar_corpus/2012_test.jsonl": {
+   "bytes": 187847727,
+   "sha256": "858ed86f5dff1134f4d04282c5302cb33191b7249190d2ce26ed2386ae1271f2",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2012_train.jsonl": {
+   "bytes": 1478381326,
+   "sha256": "6a77c644ccce8f9942947a6a972c9b2b77a96f7d43559a6ecc994b1e1d09b5d5",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2012_validate.jsonl": {
+   "bytes": 188148138,
+   "sha256": "6e89d27053768a08ef9a673113791d901de67f59a1ca8c1acd34a13b324ad89d",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2013_test.jsonl": {
+   "bytes": 184357298,
+   "sha256": "b313b1c884b6444c8cfb0cb01309ef0107114c21588bb9e90c1eb51e3457cab7",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2013_train.jsonl": {
+   "bytes": 1483064660,
+   "sha256": "f15518e1297949a66cb79de2a81e1b94ac787081e05e553e674d2e9d130ff5b9",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2013_validate.jsonl": {
+   "bytes": 185417051,
+   "sha256": "191c3dfa15fd3484a1bfb367446cda5b7f4517e51596488e21da7766776503bc",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2014_test.jsonl": {
+   "bytes": 182881411,
+   "sha256": "c24d02d522c59c07226806cb632c2cdc8595b4311e3420fa422139e540d79e2f",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2014_train.jsonl": {
+   "bytes": 1514651761,
+   "sha256": "8400bfd7b10e862089578a67698e5afcbb1cfa8efa1b6a0372cfa60d7cce6552",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2014_validate.jsonl": {
+   "bytes": 183429923,
+   "sha256": "da187b2ba4cac9d3c5053cf20a6abe36d9572e30150094e333680bd322b6d085",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2015_test.jsonl": {
+   "bytes": 191133084,
+   "sha256": "39bcb29599c4d59bb56fba7f613049028712baefe852c02ae2419cd3cb7f53bb",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2015_train.jsonl": {
+   "bytes": 1487221002,
+   "sha256": "bb86c0d9bdae4c30db87aa508c8914a8225ae10dcb81765a93f820eda53e4e55",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2015_validate.jsonl": {
+   "bytes": 181949048,
+   "sha256": "f127c546d917fadaad5658c7374fdfc162dae4d6fb8c70b2fe7279bf51aba77a",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2016_test.jsonl": {
+   "bytes": 179298844,
+   "sha256": "3d3be96ec83b9b10dad8c192ab55156cc8d410572666ce276a240cb0d26b4d9d",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2016_train.jsonl": {
+   "bytes": 1486550439,
+   "sha256": "172a381312ae474a066d3f985b3ad1f001389f1bcc6304c20daff4f0e128ed07",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2016_validate.jsonl": {
+   "bytes": 180118209,
+   "sha256": "e86aa38970eaa742727088e108387ab9b478790e4a0cb053eda98229191db2bb",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2017_test.jsonl": {
+   "bytes": 186275822,
+   "sha256": "05c200ed50a40d59f800fcbaa1f2b19128bd32aeb19a92f92d9b7f34a7534967",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2017_train.jsonl": {
+   "bytes": 1473872843,
+   "sha256": "0705d6c70db3109869c11ac3dedbfc61461d5b6da1c08596b105257b9a8c20fb",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2017_validate.jsonl": {
+   "bytes": 176157743,
+   "sha256": "c231c1c1113cf2fd15a14b686163790c3afeb84aa98f88a1621446d48ada8285",
+   "modified": "2026-11-13"
+  },
+  "edgar_corpus/2018_test.jsonl": {
+   "bytes": 184475611,
+   "sha256": "f66ce0755e86fed09b986905c59962cfed9b28a523cdce57723075157c9c44c7",
+   "modified": "2026-11-11"
+  },
+  "edgar_corpus/2018_train.jsonl": {
+   "bytes": 1448040916,
+   "sha256": "e81d3d4d380f00a5bc965f5f1d55a882d5f5c7bfdc905530b0b183a6124968ef",
+   "modified": "2026-11-11"
+  },
+  "edgar_corpus/2018_validate.jsonl": {
+   "bytes": 183294040,
+   "sha256": "f0c62c3cec722a9e7f1e92ceb81e7b213bd6dacbd8b7ab4869207109ac56666e",
+   "modified": "2026-11-11"
+  },
+  "edgar_corpus/2019_test.jsonl": {
+   "bytes": 178112607,
+   "sha256": "abb9947646fbc32a48dcb56f35f668fcef2f628307f6d7c14cc5c2fc14466042",
+   "modified": "2026-11-11"
+  },
+  "edgar_corpus/2019_train.jsonl": {
+   "bytes": 1435739542,
+   "sha256": "9f05959fe52a99536c474c8cf61f2197e9bbce6c16b2a1c2dd4a81622e0a8d91",
+   "modified": "2026-11-11"
+  },
+  "edgar_corpus/2019_validate.jsonl": {
+   "bytes": 177385006,
+   "sha256": "9b220d29c23341cc9fa528dd81bdd06484aa246ad478231f57bb0097dd03b07e",
+   "modified": "2026-11-11"
+  },
   "sec/company_tickers.json": {
    "bytes": 796325,
    "sha256": "391effc6a807ae1752c9d2c351dbecab8f15aa1c59b035a9a28f7955a94feb0f",
@@ -450,6 +570,11 @@
    "bytes": 629,
    "sha256": "b3381309d63bbd9739751e2d15c8d09e2651428b1e7765c914531f6793c21c21",
    "modified": "2026-11-12"
+  },
+  "sec/submissions.zip": {
+   "bytes": 1574586078,
+   "sha256": "7fe68e3c02d0e988f7d89e1db49acea12f9ced0cde1c6269a1e2949b3cb85ad7",
+   "modified": "2026-11-13"
   }
  }
 }

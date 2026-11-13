@@ -61,6 +61,16 @@ class Settings:
         return self.raw_sec_dir / "frames"
 
     @property
+    def submissions_path(self) -> Path:
+        """The SEC's bulk submissions file: every filer's filing history."""
+        return self.raw_sec_dir / "submissions.zip"
+
+    @property
+    def raw_corpus_dir(self) -> Path:
+        """EDGAR-CORPUS: 10-Ks split by Item, one `<year>_<split>.jsonl` per label year."""
+        return self.raw_dir / "edgar_corpus"
+
+    @property
     def interim_dir(self) -> Path:
         return self.data_dir / "interim"
 
