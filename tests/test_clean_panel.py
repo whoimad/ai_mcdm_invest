@@ -42,6 +42,7 @@ def test_keeps_fundamentals_sector_and_return(raw_panel: pd.DataFrame) -> None:
         "Total assets",
         "Total debt",
         "Market Cap",
+        "debtEquityRatio",
         "next_year_return",
         "tail_loss",
     ]

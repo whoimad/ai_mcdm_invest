@@ -1,9 +1,13 @@
-.PHONY: all fetch manifest test test-slow lint check
+.PHONY: all figures fetch manifest test test-slow lint check
 
-# Rebuild every derived table from raw data.
+# Rebuild every derived table and figure from raw data.
 # Raw data is read from AI_MCDM_RAW_DIR (default: ~/maids/data).
 all:
 	uv run python -m ai_mcdm_invest.pipeline
+
+# Redraw the figures from the tables `make all` wrote, without rebuilding them.
+figures:
+	uv run python -m ai_mcdm_invest.figures.storyline
 
 # Download the raw files the rebuild reads besides the panel: SEC ticker list,
 # XBRL frames and bulk submissions into AI_MCDM_RAW_DIR/sec, EDGAR-CORPUS into

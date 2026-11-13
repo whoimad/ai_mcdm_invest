@@ -10,6 +10,7 @@ from ai_mcdm_invest.config import Settings
 from ai_mcdm_invest.data import join_report
 from ai_mcdm_invest.data.join_report import JoinCoverageTooLow
 from ai_mcdm_invest.data.raw_manifest import RawDataChanged
+from ai_mcdm_invest.figures.storyline import draw_figures
 from ai_mcdm_invest.pipeline import run
 
 FIXTURE_MANIFEST = Path(__file__).parent / "fixtures" / "raw_manifest.json"
@@ -98,3 +99,36 @@ def test_rebuild_stops_before_the_joined_panel_when_coverage_is_low(
 
     assert (tmp_path / "reports" / "join_report.md").exists()  # to see what went wrong
     assert not (tmp_path / "processed" / "panel.parquet").exists()
+
+
+STORYLINE_FIGURES = ["join_funnel", "leverage_tail_loss", "section_lengths", "going_concern_items"]
+
+
+def test_rebuild_draws_the_storyline_figures_with_captions(
+    fixture_raw_dir: Path, tmp_path: Path
+) -> None:
+    run(fixture_settings(fixture_raw_dir, tmp_path))
+
+    for name in STORYLINE_FIGURES:
+        assert (tmp_path / "figures" / f"{name}.pdf").exists()
+        assert (tmp_path / "figures" / f"{name}.png").exists()
+    captions = (tmp_path / "figures" / "captions.md").read_text()
+    sections = captions.split("\n## ")[1:]
+    assert [section.splitlines()[0] for section in sections] == STORYLINE_FIGURES
+    for section in sections:
+        assert "n = " in section
+        assert "Source:" in section
+        assert "fiscal 2014–2018" in section
+        assert "returns in 2015–2019" in section
+    # The funnel starts from the whole clean panel: 127 company-years, 26 tail losers.
+    assert "n = 127 company-years (26 tail losers)" in sections[0]
+
+
+def test_figures_are_redrawn_from_the_tables_on_disk(fixture_raw_dir: Path, tmp_path: Path) -> None:
+    run(fixture_settings(fixture_raw_dir, tmp_path))
+    shutil.rmtree(tmp_path / "figures")
+
+    draw_figures(fixture_settings(tmp_path / "no_raw_data_needed", tmp_path))
+
+    assert (tmp_path / "figures" / "captions.md").exists()
+    assert len(list((tmp_path / "figures").glob("*.pdf"))) == len(STORYLINE_FIGURES)

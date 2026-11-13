@@ -19,7 +19,8 @@ uv sync
 |---|---|
 | `make fetch` | Downloads the SEC files and the 10-K corpus the rebuild reads, about 16 GB (needs the network; run once) |
 | `make manifest` | Records the raw files the study is built on in `raw_manifest.json` (only to adopt new raw data on purpose) |
-| `make all` | Checks the raw files against `raw_manifest.json`, then rebuilds every derived table, offline |
+| `make all` | Checks the raw files against `raw_manifest.json`, then rebuilds every derived table and figure, offline |
+| `make figures` | Redraws the figures from the tables `make all` wrote, without rebuilding them |
 | `make test` | Runs the test suite (needs neither the raw data nor a GPU) |
 | `make test-slow` | Runs the acceptance checks on the real raw data (fiscal 2017 join and 10-K coverage); kept out of CI |
 | `make lint` | Runs the linter, the format check and the type checker |
@@ -125,6 +126,20 @@ is the share of this year's Item 1A paragraphs of which fewer than half the
 sentences appear word for word in the prior year's Item 1A; it is empty when
 either year has no Item 1A.
 
+## Figures
+
+`make all` ends by drawing the report's four storyline figures into
+`data/figures/`, each as PDF (for the report) and PNG, with every caption
+(sample size, source, fiscal and return years) in `data/figures/captions.md`.
+They read only the pipeline's tables:
+
+| Figure | Shows |
+|---|---|
+| `join_funnel` | Companies and tail losers left at each step, from the clean panel through the ticker and figure links, one row per filer, the 10-K and its text, to Items 1A, 7 and 8 or 15 present |
+| `leverage_tail_loss` | Tail-loss rate by debt-to-equity quintile, cut across the market and within sectors, with negative equity apart; beside it each sector's median debt-to-equity against its tail-loss rate |
+| `section_lengths` | Estimated tokens of Items 1A, 7 and 8 (stubs left out) against the 32,768-token context window, with the share over it |
+| `going_concern_items` | How many 10-Ks have "going concern" in each Item, Items 8 and 15 (statements and auditor's report) set apart |
+
 ## Layout
 
 The system is a batch pipeline of stages. Each stage is a function from input
@@ -136,6 +151,7 @@ src/ai_mcdm_invest/
   pipeline.py    the rebuild command: runs every stage in order
   tables.py      writes a table as Parquet plus CSV
   data/          clean panel, company links, joined panel, filings table
+  figures/       report figures drawn from the tables
   criteria/      ratio criteria
   ml/            ML risk score
   llm/           LLM extraction from 10-K filings

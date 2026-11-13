@@ -1,4 +1,4 @@
-"""The rebuild command: runs every stage in order, from raw data to tables.
+"""The rebuild command: runs every stage in order, from raw data to tables and figures.
 
 Run with `make all` or `uv run python -m ai_mcdm_invest.pipeline`.
 """
@@ -18,11 +18,12 @@ from ai_mcdm_invest.data.links import link_companies, load_ticker_ciks, load_xbr
 from ai_mcdm_invest.data.panel import clean_panel, load_raw_panel
 from ai_mcdm_invest.data.raw_manifest import load_manifest, verify_raw_files
 from ai_mcdm_invest.data.submissions import load_submissions
+from ai_mcdm_invest.figures.storyline import storyline_figures, write_figures
 from ai_mcdm_invest.tables import write_table
 
 
 def run(settings: Settings) -> None:
-    """Rebuild every derived table under `settings.data_dir`.
+    """Rebuild every derived table and figure under `settings.data_dir`.
 
     Stops before writing anything if the raw files differ from the manifest,
     and before the joined panel if the join report shows too low a coverage.
@@ -65,6 +66,9 @@ def run(settings: Settings) -> None:
     path = write_table(filings, settings.processed_dir, "filings")
     print(f"filings table: {len(filings)} rows, written to {path}")
     print(_filing_counts(filings).to_string())
+
+    path = write_figures(storyline_figures(clean, links, joined, filings), settings.figures_dir)
+    print(f"storyline figures: written to {path.parent}")
 
 
 def _link_counts(links: pd.DataFrame, clean: pd.DataFrame) -> pd.DataFrame:

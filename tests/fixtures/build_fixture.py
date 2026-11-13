@@ -104,7 +104,7 @@ EXTRA = {
 SHARE_CLASSES = {
     2018: [("LIMAK", "LIMA", 2.0, 40.0), ("LIMAP", "LIMA", None, -30.0)],
 }
-HEADER = "Revenue,Net Income,Total assets,Total debt,Market Cap,Sector"
+HEADER = "Revenue,Net Income,Total assets,Total debt,Market Cap,debtEquityRatio,Sector"
 
 
 NOT_IN_TICKER_LIST = {"BRVO", "CHRL", "DLTA"}
@@ -123,6 +123,11 @@ def figures(i: int, year: int) -> tuple[float, float, float, float, float]:
     return revenue, revenue * 0.1, revenue * 2, revenue * 0.5, revenue * 3
 
 
+def debt_to_equity(i: int) -> str:
+    """Debt-to-equity of row i: spread over 0-2, negative (negative equity) for ALFA."""
+    return f"{(i * 7) % 11 / 5 - 0.2:.2f}"
+
+
 def rows(year: int) -> list[str]:
     loser_returns, floor, step = RETURNS[year]
     returns = dict(zip(LOSERS[year], loser_returns, strict=True))
@@ -137,12 +142,16 @@ def rows(year: int) -> list[str]:
             cells[0] = ""
         ret_cell = "" if ret is None else f"{ret}"
         label = "" if ret is None else str(int(ret > 0))
-        out.append(",".join([ticker, *cells, SECTORS[i % 5], ret_cell, label]))
+        out.append(",".join([ticker, *cells, debt_to_equity(i), SECTORS[i % 5], ret_cell, label]))
     for ticker, issuer, cap_multiple, ret in SHARE_CLASSES.get(year, []):
         i = CORE.index(issuer)
         cells = [f"{v:.1f}" for v in figures(i, year)]
         cells[4] = "" if cap_multiple is None else f"{figures(i, year)[4] * cap_multiple:.1f}"
-        out.append(",".join([ticker, *cells, SECTORS[i % 5], f"{ret}", str(int(ret > 0))]))
+        out.append(
+            ",".join(
+                [ticker, *cells, debt_to_equity(i), SECTORS[i % 5], f"{ret}", str(int(ret > 0))]
+            )
+        )
     return out
 
 

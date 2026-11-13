@@ -2,7 +2,8 @@
 
 Stages never build these paths themselves; they receive tables. Only the entry
 points read `Settings`: the rebuild (`pipeline.py`), the SEC download
-(`data/sec_download.py`), the manifest recorder (`data/raw_manifest.py`) and
+(`data/sec_download.py`), the manifest recorder (`data/raw_manifest.py`), the
+figure redraw (`figures/storyline.py`) and
 the slow acceptance tests on real data.
 """
 
@@ -81,3 +82,7 @@ class Settings:
     @property
     def reports_dir(self) -> Path:
         return self.data_dir / "reports"
+
+    @property
+    def figures_dir(self) -> Path:
+        return self.data_dir / "figures"
