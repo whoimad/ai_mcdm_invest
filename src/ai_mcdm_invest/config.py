@@ -16,6 +16,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RAW_DIR = Path.home() / "maids" / "data"
 DEFAULT_DATA_DIR = REPO_ROOT / "data"
 DEFAULT_MANIFEST_PATH = REPO_ROOT / "raw_manifest.json"
+# Caesars Entertainment, fiscal 2014: its operating subsidiary filed for
+# Chapter 11 in January 2015, the auditor doubted the parent could continue as
+# a going concern, and the shares fell 49% in 2015.
+DEFAULT_WORKED_EXAMPLE = ("CZR", 2014)
 
 
 @dataclass(frozen=True)
@@ -24,21 +28,30 @@ class Settings:
 
     `data_dir` holds every derived table and is ignored by git.
     `manifest_path` records the exact raw files the study is built on.
+    `worked_example` is the ticker and fiscal year whose 10-K the report quotes;
+    it must be in the raw data, so the fixture dataset names its own.
     """
 
     raw_dir: Path = DEFAULT_RAW_DIR
     data_dir: Path = DEFAULT_DATA_DIR
     manifest_path: Path = DEFAULT_MANIFEST_PATH
+    worked_example: tuple[str, int] = DEFAULT_WORKED_EXAMPLE
 
     @classmethod
     def from_env(cls) -> Self:
-        """Read `AI_MCDM_RAW_DIR`, `AI_MCDM_DATA_DIR` and `AI_MCDM_MANIFEST`, else defaults."""
+        """Read `AI_MCDM_RAW_DIR`, `AI_MCDM_DATA_DIR`, `AI_MCDM_MANIFEST` and
+        `AI_MCDM_WORKED_EXAMPLE` (`TICKER:YEAR`), else defaults."""
+        worked_example = DEFAULT_WORKED_EXAMPLE
+        if value := os.environ.get("AI_MCDM_WORKED_EXAMPLE"):
+            ticker, fiscal_year = value.split(":")
+            worked_example = (ticker, int(fiscal_year))
         return cls(
             raw_dir=Path(os.environ.get("AI_MCDM_RAW_DIR", DEFAULT_RAW_DIR)).expanduser(),
             data_dir=Path(os.environ.get("AI_MCDM_DATA_DIR", DEFAULT_DATA_DIR)).expanduser(),
             manifest_path=Path(
                 os.environ.get("AI_MCDM_MANIFEST", DEFAULT_MANIFEST_PATH)
             ).expanduser(),
+            worked_example=worked_example,
         )
 
     @property

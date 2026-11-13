@@ -22,3 +22,4 @@ jobs:
         env:
           AI_MCDM_RAW_DIR: tests/fixtures/raw
           AI_MCDM_MANIFEST: tests/fixtures/raw_manifest.json
+          AI_MCDM_WORKED_EXAMPLE: ROMO:2015

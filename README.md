@@ -60,7 +60,8 @@ a file is missing, changed or unlisted. To build on new raw data, run
 pipeline without the raw data, point it at the test fixture and its manifest:
 
 ```
-AI_MCDM_RAW_DIR=tests/fixtures/raw AI_MCDM_MANIFEST=tests/fixtures/raw_manifest.json make all
+AI_MCDM_RAW_DIR=tests/fixtures/raw AI_MCDM_MANIFEST=tests/fixtures/raw_manifest.json \
+  AI_MCDM_WORKED_EXAMPLE=ROMO:2015 make all
 ```
 
 Derived tables are written under `data/` (ignored by git), each as Parquet
@@ -163,10 +164,11 @@ The rest of the exploratory section:
 | `item1a_change` | Share of Item 1A paragraphs new or changed since the prior year |
 | `worked_example` | One company's six criteria and their percentile beside quoted 10-K passages |
 
-The worked example is chosen by hand (`WORKED_EXAMPLE` in
-`data/worked_example.py`) from the years before the test years: Caesars
-Entertainment, fiscal 2014, whose auditor doubted it could continue as a going
-concern. Its passages are read from EDGAR-CORPUS during `make all` and kept in
+The worked example is chosen by hand from the years before the test years:
+Caesars Entertainment, fiscal 2014, whose auditor doubted it could continue as
+a going concern. It is a setting, `AI_MCDM_WORKED_EXAMPLE` (`TICKER:YEAR`,
+default `CZR:2014`), because it must be in the raw data the build reads; the
+fixture dataset uses `ROMO:2015`. Its passages are read from EDGAR-CORPUS during `make all` and kept in
 `data/processed/worked_example`, so `make figures` needs no raw data.
 
 ## Layout

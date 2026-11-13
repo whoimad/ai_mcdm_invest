@@ -2,7 +2,7 @@
 
 The report shows one company's fundamentals beside what its 10-K says, to
 show at a glance what text adds that numbers cannot. The company is chosen by
-hand (`WORKED_EXAMPLE`), from the development years only: no test-year filing
+hand (`Settings.worked_example`), from the development years only: no test-year filing
 is read before the pre-registration (decision 5.1).
 
 Three passages are quoted, each the first paragraph of its Item that fits:
@@ -21,11 +21,6 @@ import pandas as pd
 
 from ai_mcdm_invest.data.corpus import GOING_CONCERN, load_record_sections, section_body
 from ai_mcdm_invest.data.panel import TEST_YEARS
-
-# Caesars Entertainment, fiscal 2014: its operating subsidiary filed for
-# Chapter 11 in January 2015, the auditor doubted the parent could continue as
-# a going concern, and the shares fell 49% in 2015.
-WORKED_EXAMPLE = ("CZR", 2014)
 
 MIN_PASSAGE_CHARS = 80
 MAX_PASSAGE_CHARS = 600
