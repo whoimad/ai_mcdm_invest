@@ -5,6 +5,10 @@ risk-aware stock ranking? The study compares three layers of criteria (six
 textbook ratios, an ML risk score, and facts an LLM extracts from 10-K
 filings) on fiscal years the text pipeline never saw.
 
+**Start here:** [`notebooks/data_exploration.ipynb`](notebooks/data_exploration.ipynb)
+is a tour of the data and what it showed before any model was built. It is saved
+with its results, so it reads on GitHub without the data.
+
 ## Setup
 
 Requires [uv](https://docs.astral.sh/uv/).
@@ -21,6 +25,7 @@ uv sync
 | `make manifest` | Records the raw files the study is built on in `raw_manifest.json` (only to adopt new raw data on purpose) |
 | `make all` | Checks the raw files against `raw_manifest.json`, then rebuilds every derived table and figure, offline |
 | `make figures` | Redraws the figures from the tables `make all` wrote, without rebuilding them |
+| `make notebook` | Reruns the data notebook from those tables and figures and saves its outputs; kept out of CI |
 | `make test` | Runs the test suite (needs neither the raw data nor a GPU) |
 | `make test-slow` | Runs the acceptance checks on the real raw data (fiscal 2017 join and 10-K coverage); kept out of CI |
 | `make lint` | Runs the linter, the format check and the type checker |
@@ -184,4 +189,6 @@ src/ai_mcdm_invest/
   evaluation/    layer ablation and tests
 tests/
   fixtures/      fictional companies with known answers
+notebooks/
+  data_exploration.ipynb   a tour of the data, saved with its results
 ```

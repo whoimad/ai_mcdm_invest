@@ -1,4 +1,4 @@
-.PHONY: all figures fetch manifest test test-slow lint check
+.PHONY: all figures notebook fetch manifest test test-slow lint check
 
 # Rebuild every derived table and figure from raw data.
 # Raw data is read from AI_MCDM_RAW_DIR (default: ~/maids/data).
@@ -8,6 +8,11 @@ all:
 # Redraw the figures from the tables `make all` wrote, without rebuilding them.
 figures:
 	uv run python -m ai_mcdm_invest.figures.draw
+
+# Rerun the data notebook from the tables and figures `make all` wrote, saving
+# its outputs so it reads on GitHub without the data. Kept out of CI.
+notebook:
+	uv run jupyter nbconvert --to notebook --execute --inplace notebooks/data_exploration.ipynb
 
 # Download the raw files the rebuild reads besides the panel: SEC ticker list,
 # XBRL frames and bulk submissions into AI_MCDM_RAW_DIR/sec, EDGAR-CORPUS into

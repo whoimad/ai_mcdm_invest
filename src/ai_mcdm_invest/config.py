@@ -3,7 +3,8 @@
 Stages never build these paths themselves; they receive tables. Only the entry
 points read `Settings`: the rebuild (`pipeline.py`), the SEC download
 (`data/sec_download.py`), the manifest recorder (`data/raw_manifest.py`), the
-figure redraw (`figures/draw.py`) and the slow acceptance tests on real data.
+figure redraw (`figures/draw.py`), the data notebook (`notebooks/data_exploration.ipynb`)
+and the slow acceptance tests on real data.
 """
 
 import os
