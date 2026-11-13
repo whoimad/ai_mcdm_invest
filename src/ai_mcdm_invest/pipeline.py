@@ -8,11 +8,16 @@ import pandas as pd
 from ai_mcdm_invest.config import Settings
 from ai_mcdm_invest.data.links import link_companies, load_ticker_ciks, load_xbrl_figures
 from ai_mcdm_invest.data.panel import clean_panel, load_raw_panel
+from ai_mcdm_invest.data.raw_manifest import load_manifest, verify_raw_files
 from ai_mcdm_invest.tables import write_table
 
 
 def run(settings: Settings) -> None:
-    """Rebuild every derived table under `settings.data_dir`."""
+    """Rebuild every derived table under `settings.data_dir`.
+
+    Stops before writing anything if the raw files differ from the manifest.
+    """
+    verify_raw_files(settings.raw_dir, load_manifest(settings.manifest_path))
     raw = load_raw_panel(settings.raw_panel_dir)
     clean = clean_panel(raw)
     path = write_table(clean, settings.interim_dir, "kaggle_clean")

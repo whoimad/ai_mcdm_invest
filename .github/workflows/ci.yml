@@ -21,3 +21,4 @@ jobs:
         run: make all
         env:
           AI_MCDM_RAW_DIR: tests/fixtures/raw
+          AI_MCDM_MANIFEST: tests/fixtures/raw_manifest.json

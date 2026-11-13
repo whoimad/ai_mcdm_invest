@@ -8,6 +8,7 @@ from ai_mcdm_invest.data.links import link_companies, load_ticker_ciks, load_xbr
 from ai_mcdm_invest.data.panel import clean_panel, load_raw_panel
 
 FIXTURE_RAW_DIR = Path(__file__).parent / "fixtures" / "raw"
+FIXTURE_MANIFEST = Path(__file__).parent / "fixtures" / "raw_manifest.json"
 
 
 @pytest.fixture

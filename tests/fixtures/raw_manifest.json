@@ -1,0 +1,110 @@
+{
+ "recorded": "2026-11-13",
+ "files": {
+  "2014 2018/2014_Financial_Data.csv": {
+   "bytes": 1636,
+   "sha256": "232c21a2f2d524a3c197b6537cb8f2ed96d6721896ca179672c72ce272019bd8",
+   "modified": "2026-11-13"
+  },
+  "2014 2018/2015_Financial_Data.csv": {
+   "bytes": 1594,
+   "sha256": "e4b36014d1a3e271c89b4adb78b9f2dfdffffa1c9beffe14b0830d6241d7a534",
+   "modified": "2026-11-13"
+  },
+  "2014 2018/2016_Financial_Data.csv": {
+   "bytes": 1635,
+   "sha256": "3c254fcdaed679277b07f641a5bb2b9da942b5cf822e47ac7e7b4e7532e96ae7",
+   "modified": "2026-11-13"
+  },
+  "2014 2018/2017_Financial_Data.csv": {
+   "bytes": 1640,
+   "sha256": "d10c319c359cdf4bf66798be0e292b5cafd01a7ccb62dc32a44958c6e3c5a34d",
+   "modified": "2026-11-13"
+  },
+  "2014 2018/2018_Financial_Data.csv": {
+   "bytes": 1579,
+   "sha256": "102a3f93ce16e80968ca28f3853c30af292297ff401ccef4018c3df1a5555cd8",
+   "modified": "2026-11-13"
+  },
+  "sec/company_tickers.json": {
+   "bytes": 1642,
+   "sha256": "24ea072d1066ef955824acc08345ee7757fbe3e3d2133757bd817efa86269a8e",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Assets_CY2014Q4I.json": {
+   "bytes": 2534,
+   "sha256": "af4cb138f1704907f06b59135ca8f92831c794ca5ccf9b89ee983fd4f7595375",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Assets_CY2015Q4I.json": {
+   "bytes": 2534,
+   "sha256": "6b8100f5acf02e4f5ce53696951248f206aca9f593fe29fa4a246e04a9e6c015",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Assets_CY2016Q4I.json": {
+   "bytes": 2534,
+   "sha256": "3a7411edf6e0a9155722ec8b1817f97ee5697f738a9e9e79c08cea403e0ec6f0",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Assets_CY2017Q4I.json": {
+   "bytes": 2534,
+   "sha256": "d808a118f199b2cdd9116460f4325275f03d6a92d279fd08f774fe77f3be71a4",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Assets_CY2018Q4I.json": {
+   "bytes": 2534,
+   "sha256": "b5245e7e162787c0b8b64de044890c26e1515c5884649dffaffe6a34f7ced160",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/NetIncomeLoss_CY2014.json": {
+   "bytes": 3178,
+   "sha256": "73061503ea1ebe7fb5b367a5754fe3aedfbd2598c24ae72013dd0f31187faa2d",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/NetIncomeLoss_CY2015.json": {
+   "bytes": 3178,
+   "sha256": "124038c7d76ec86a1292d40695a06262f64ebdcc5c8684855a8011efafcad2c4",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/NetIncomeLoss_CY2016.json": {
+   "bytes": 3178,
+   "sha256": "0b16dd6a4a72f207ec13d35fb4c66b77bfe60b98c86633b886d94d4d43a728ce",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/NetIncomeLoss_CY2017.json": {
+   "bytes": 3178,
+   "sha256": "b678b7ccec8b16880d0893a4eac1bba6f01f890cccd89a7f58ef688dfeafba5d",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/NetIncomeLoss_CY2018.json": {
+   "bytes": 3178,
+   "sha256": "2995259b2f4db58c7b7548747e1f67cae569427190e91dee30122146a45c3146",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Revenues_CY2014.json": {
+   "bytes": 3204,
+   "sha256": "1a537af02bb6ffe3ac317c26f2de65a5579e3444f0527cd38db2c48e713672b0",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Revenues_CY2015.json": {
+   "bytes": 3204,
+   "sha256": "4634dc1bbad7c5b0b423082fe3afdc171b833b3814e82ee1a883ec3d403e0653",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Revenues_CY2016.json": {
+   "bytes": 3204,
+   "sha256": "33de316aa86b08fad8f43e021f2e361e6fc1ad02bf9355ff61224fb8227fae6a",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Revenues_CY2017.json": {
+   "bytes": 3204,
+   "sha256": "f3d58ceb2d1e5cfbcc4e921efda21cb490a848c68110fc5de119fe0a46ee3a75",
+   "modified": "2026-11-13"
+  },
+  "sec/frames/Revenues_CY2018.json": {
+   "bytes": 3204,
+   "sha256": "fff52ed5ac5dddf96a65dd1d3bd9ea9576dde4e76d7a56944365c0f2d6ea4328",
+   "modified": "2026-11-13"
+  }
+ }
+}

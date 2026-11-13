@@ -1,7 +1,13 @@
 """Regenerate the fixture raw panel: fictional companies with known answers.
 
-Run with `uv run python tests/fixtures/build_fixture.py`. The CSV files it
-writes are committed; tests read those files and never import this script.
+Run with `uv run python tests/fixtures/build_fixture.py`, then re-record the
+fixture manifest:
+
+    AI_MCDM_RAW_DIR=tests/fixtures/raw \\
+    AI_MCDM_MANIFEST=tests/fixtures/raw_manifest.json make manifest
+
+The files it writes are committed; tests read those files and never import
+this script.
 
 Design (the "known answers" tests rely on):
 - 25 core companies appear in every fiscal year 2014-2018 with a valid return,

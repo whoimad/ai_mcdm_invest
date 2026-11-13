@@ -18,7 +18,8 @@ uv sync
 | Command | What it does |
 |---|---|
 | `make fetch` | Downloads the SEC files the rebuild reads (needs the network; run once) |
-| `make all` | Rebuilds every derived table from raw data, offline |
+| `make manifest` | Records the raw files the study is built on in `raw_manifest.json` (only to adopt new raw data on purpose) |
+| `make all` | Checks the raw files against `raw_manifest.json`, then rebuilds every derived table, offline |
 | `make test` | Runs the test suite (needs neither the raw data nor a GPU) |
 | `make lint` | Runs the linter, the format check and the type checker |
 | `make check` | `lint` and `test` together; what CI runs |
@@ -36,11 +37,20 @@ the `AI_MCDM_RAW_DIR` environment variable (default `~/maids/data`). It holds:
 
 `make fetch` only adds files that are missing and never rewrites one. The SEC
 asks automated clients to name themselves; set `SEC_USER_AGENT` to override the
-generic default. To try the
-pipeline without the raw data, point it at the test fixture:
+generic default.
+
+**The study is tied to one copy of the raw data.** SEC data about 2014-2018
+still changes: companies restate figures (the XBRL frames keep the latest
+filed value), old filings carry today's company names, and the ticker list
+changes daily. So `raw_manifest.json` (committed) records the size, SHA-256
+and date of every file in the raw folders the build reads; the SEC files are
+the copy downloaded on 2026-11-12. `make all` stops before writing anything if
+a file is missing, changed or unlisted. To build on new raw data, run
+`make manifest` and commit the change, so the switch is visible in git. To try the
+pipeline without the raw data, point it at the test fixture and its manifest:
 
 ```
-AI_MCDM_RAW_DIR=tests/fixtures/raw make all
+AI_MCDM_RAW_DIR=tests/fixtures/raw AI_MCDM_MANIFEST=tests/fixtures/raw_manifest.json make all
 ```
 
 Derived tables are written under `data/` (ignored by git), each as Parquet

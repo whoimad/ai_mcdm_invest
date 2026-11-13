@@ -1,0 +1,455 @@
+{
+ "recorded": "2026-11-13",
+ "files": {
+  "2014 2018/2014_Financial_Data.csv": {
+   "bytes": 7218890,
+   "sha256": "924094824e72babd2412cc05379d2e08b0fba369325ef3e69e0b4c1125cf14ef",
+   "modified": "2020-01-18"
+  },
+  "2014 2018/2015_Financial_Data.csv": {
+   "bytes": 7847145,
+   "sha256": "11765a0f7b6733eb2f9811bafb16791b3cfb6bb5242b027c4430b1ff6e101139",
+   "modified": "2020-01-18"
+  },
+  "2014 2018/2016_Financial_Data.csv": {
+   "bytes": 8437125,
+   "sha256": "238c1237d8be2456643eaff757beb47b373be8ac5376ecfc62618e914443d764",
+   "modified": "2020-01-18"
+  },
+  "2014 2018/2017_Financial_Data.csv": {
+   "bytes": 8691229,
+   "sha256": "bcbdb2310574bdc1b4848f1f62452f7abfd92b0f823bf8b6cd12922224f8ed0d",
+   "modified": "2020-01-18"
+  },
+  "2014 2018/2018_Financial_Data.csv": {
+   "bytes": 8570851,
+   "sha256": "1a2b8e679ced373a08f4431faf7c78810cfb669bcc22dc2d9875869202d128f4",
+   "modified": "2020-01-18"
+  },
+  "sec/company_tickers.json": {
+   "bytes": 796325,
+   "sha256": "391effc6a807ae1752c9d2c351dbecab8f15aa1c59b035a9a28f7955a94feb0f",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2013Q1I.json": {
+   "bytes": 955103,
+   "sha256": "35eb4c3b992e0824078cd50f950f14ff9fcb9021dbce8399a3527b464ea713b7",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2013Q2I.json": {
+   "bytes": 961900,
+   "sha256": "77160e1c1234f8be346545ee64edf1441821bd783b4a3deca949b83c8ea63244",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2013Q3I.json": {
+   "bytes": 955112,
+   "sha256": "2a7d7555bed3d162affca6a0716e222a290a9820a4eb755f138a670053f57fca",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2013Q4I.json": {
+   "bytes": 1022579,
+   "sha256": "32634bde134e57403aee5ae300c347f08b110984602b3bffe7d1a439fb86908a",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2014Q1I.json": {
+   "bytes": 944479,
+   "sha256": "08d771a49bea9c4fef80ac2d6787dfbe4e7801c0b2f6bee23f4bf47fdf0249f0",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2014Q2I.json": {
+   "bytes": 952090,
+   "sha256": "1a66b1a071a09e5b2736f0d51f029deb13c557ea13b7b1c5d0a2f62af9a5656f",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2014Q3I.json": {
+   "bytes": 943152,
+   "sha256": "f18c30ec2e64b7e4d8fa290a473f859b9d30b84d3dbdab1bf7b137494422631b",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2014Q4I.json": {
+   "bytes": 993331,
+   "sha256": "0e132245f23245287ee16c0a6ec4a60752a581b4e33c2d10cf3000d34f0af3c9",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2015Q1I.json": {
+   "bytes": 917233,
+   "sha256": "fb7b7789eb4f745e7f75891960a2d9b7e2937cbd839b19ea207318f5f80b87e1",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2015Q2I.json": {
+   "bytes": 918843,
+   "sha256": "f1a1077b22217a3d56b028b689623815e74fb804a81af978b44d096c06c8b732",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2015Q3I.json": {
+   "bytes": 899365,
+   "sha256": "c934f08b78728a553408f0a611e63c43ddbe324a6a01f4281f29421f90888113",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2015Q4I.json": {
+   "bytes": 930364,
+   "sha256": "a3e1a5218b727c0b6834ef628d0fab240bcea1ae2c6b7384d2892079fe3e45d9",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2016Q1I.json": {
+   "bytes": 862251,
+   "sha256": "20a6bd3db52c17ef3b0fc231dea96831c283d1b333da9974ff443d424e9775fe",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2016Q2I.json": {
+   "bytes": 859569,
+   "sha256": "69e8a99e957346110d9660cd934fd7e4130384286561db94ac057ae43a0f006f",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2016Q3I.json": {
+   "bytes": 843114,
+   "sha256": "74197d8fc10d0a514b16f5242e22d676362adc084467ef34e6d4c760ec51ce43",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2016Q4I.json": {
+   "bytes": 884100,
+   "sha256": "1d094824cd3c6be9f7b1deebb2c6a60866790c65cb657c34cf17f83c0b4b3d75",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2017Q1I.json": {
+   "bytes": 820594,
+   "sha256": "bccc4e5acbb40c932ec4a2f36bfa5524e9cd7c736f18c873965b764fcde0e6e9",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2017Q2I.json": {
+   "bytes": 819054,
+   "sha256": "6e37a90e0a0392a0fc47cde1450f02553f7bce7b2f70646178eb963d3288879b",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2017Q3I.json": {
+   "bytes": 807370,
+   "sha256": "15b6334a091e96b0f5b44e3ae174476874aa43df571846adf3e3d629d3c41908",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2017Q4I.json": {
+   "bytes": 859495,
+   "sha256": "d903648b03ffc6a43e9f3f121996906e01b608cc7dd54f5acd3b422eed1aa2a4",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2018Q1I.json": {
+   "bytes": 789437,
+   "sha256": "ef611f5923886ffa7ec363330c7a5d7537cf55a3df72de20b507214cba76fa9a",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2018Q2I.json": {
+   "bytes": 796972,
+   "sha256": "56893ad4177fd1f8c1b6c54849bccc85f0a79a0d75170e3dd4b8430c8af2f181",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2018Q3I.json": {
+   "bytes": 788595,
+   "sha256": "1638583110be25b5027fca0f31c5dfee617335f94fe89ef25b6485970e8928b5",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2018Q4I.json": {
+   "bytes": 836283,
+   "sha256": "e78e6426047d9591d80ac5019b69c916279556d38633b270352709e543465b2c",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2019Q1I.json": {
+   "bytes": 770995,
+   "sha256": "8a9d010f619beb37082d53ec72f09649174aa10854640e0a77d0d54fe346a1f6",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2019Q2I.json": {
+   "bytes": 777321,
+   "sha256": "f4513783022ed5c87cc53f813e5fe7c681b8f3529306ae5afddb7b2a76e71e6e",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2019Q3I.json": {
+   "bytes": 766042,
+   "sha256": "b4a5ce4a2529f6bd5c99662c50d49ff2b1f15edf68cc89a418ea0483414b0b89",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Assets_CY2019Q4I.json": {
+   "bytes": 819802,
+   "sha256": "f97fbeb7ae3f27c5ae0f79bf6cf829d15bd8d0a3368b201057b722ed32badc3c",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/NetIncomeLoss_CY2013.json": {
+   "bytes": 1131386,
+   "sha256": "b39538db6ed5ba9d9fdfc646c158f97364fb0d81980493fa8be2ee3883205907",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/NetIncomeLoss_CY2014.json": {
+   "bytes": 1095321,
+   "sha256": "63884eda5d1633cc0a7207fc17789f6425daedbc120c0ce534c042a2d3dd375e",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/NetIncomeLoss_CY2015.json": {
+   "bytes": 1037082,
+   "sha256": "e747cef0b21a9464775995d9a5233974aff32c4b4683e366d171170fe0b5ec42",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/NetIncomeLoss_CY2016.json": {
+   "bytes": 987170,
+   "sha256": "7249d5864e06904b4d1f7ce5fa7e7d0d09d3d69db59404582c97b4bce009b35f",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/NetIncomeLoss_CY2017.json": {
+   "bytes": 956461,
+   "sha256": "8ab0eb719b0f4e0e917737d8a7b267863b4d0f62eb9874e2f312fd8108aa7559",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/NetIncomeLoss_CY2018.json": {
+   "bytes": 936791,
+   "sha256": "6db6ec2cacbab9c4d7a6d88c23c3cfd371df7a7eab14a123f3ccc1750ad74c89",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/NetIncomeLoss_CY2019.json": {
+   "bytes": 946165,
+   "sha256": "f15e595eca6bdf09ae07048657334f06a82b80b385355f3f4715eb23362f6dbe",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerExcludingAssessedTax_CY2013.json": {
+   "bytes": 12,
+   "sha256": "0e67a643c152d6568c10b21764bb128950c9a0ca8453025af8562206ddc36457",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerExcludingAssessedTax_CY2014.json": {
+   "bytes": 756,
+   "sha256": "673ba71c10a455362efb4140613038c2133b2d99fdcf3040d5dd84ad2b5ad02d",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerExcludingAssessedTax_CY2015.json": {
+   "bytes": 5563,
+   "sha256": "c71e658bb1a01cc85c01fab0cf2691f60aa54ba708fcf2a9a4193d03c5c57c09",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerExcludingAssessedTax_CY2016.json": {
+   "bytes": 216708,
+   "sha256": "9e8d925353920d1d0c75f484eabc152fb04de0c272fae6342aa237c454a0e112",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerExcludingAssessedTax_CY2017.json": {
+   "bytes": 328859,
+   "sha256": "fbeffe6af35107effbb2d704f68d88296bb49b21097d973db474fde8a1f0e2ef",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerExcludingAssessedTax_CY2018.json": {
+   "bytes": 428481,
+   "sha256": "367c09bd414e6ccfdcc5c35ab7916a38e6d1e51d7d11725f2e1c7f02cfbb29fc",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerExcludingAssessedTax_CY2019.json": {
+   "bytes": 467424,
+   "sha256": "bb44dd228eb495ce4cddd28994b189ed9be98c548d9c2fc4411309b6f2086812",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerIncludingAssessedTax_CY2013.json": {
+   "bytes": 12,
+   "sha256": "0e67a643c152d6568c10b21764bb128950c9a0ca8453025af8562206ddc36457",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerIncludingAssessedTax_CY2014.json": {
+   "bytes": 878,
+   "sha256": "b75b8a13b3369a0251c151c19a2715a3720721d155e1730efbb059f3dc45aacb",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerIncludingAssessedTax_CY2015.json": {
+   "bytes": 2589,
+   "sha256": "4c19299106911bf081a3f0faf13deb5808fe6cba570865ac70c2536b43aaf6e0",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerIncludingAssessedTax_CY2016.json": {
+   "bytes": 68966,
+   "sha256": "0295cda2b7f37b9ea0ae0a693b912fb2ec0e9407cf502641bde642ddc8711fba",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerIncludingAssessedTax_CY2017.json": {
+   "bytes": 131184,
+   "sha256": "8e32e0285bd798a38098c013ca84ab05f1488369f0305ef7c378a9cf3ca41ef0",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerIncludingAssessedTax_CY2018.json": {
+   "bytes": 157998,
+   "sha256": "4f7420a2b675293aab6ee489b71304519ace442f6248e8e67918dc2ae2547d5c",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenueFromContractWithCustomerIncludingAssessedTax_CY2019.json": {
+   "bytes": 135693,
+   "sha256": "117d9abc8b4fc0be23c3bace0d095565037601fedaab3e75a24408a68648779c",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenuesNetOfInterestExpense_CY2013.json": {
+   "bytes": 4724,
+   "sha256": "def37b2cf74b771e1f2b9a978aeebb15b40ca64b2fcd07f48517f6f579151f18",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenuesNetOfInterestExpense_CY2014.json": {
+   "bytes": 4757,
+   "sha256": "c87cfc64e3b51ecf3c653f31051debbcbb1a269af77058ab2054dc1d934c5542",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenuesNetOfInterestExpense_CY2015.json": {
+   "bytes": 4488,
+   "sha256": "1ff52c6de530d74f6c31a63f626adfc6d59ae2230dd02f4473cbed97d51f6f4a",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenuesNetOfInterestExpense_CY2016.json": {
+   "bytes": 4963,
+   "sha256": "59db6981a3594568f17b4b3484483ca1115f0e142a012cf4db6178725c4ff55a",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenuesNetOfInterestExpense_CY2017.json": {
+   "bytes": 6417,
+   "sha256": "c95ab5699ebe13b7e1f1b5ebdf3963e9e5d71fbe846c9fb0c00efd9991f8ce2a",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenuesNetOfInterestExpense_CY2018.json": {
+   "bytes": 7372,
+   "sha256": "1e92604bcf4b2ba88376f8e745d248d0b876bf3dcef0118efe5519174d2336be",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/RevenuesNetOfInterestExpense_CY2019.json": {
+   "bytes": 10279,
+   "sha256": "16c0ac2f5454a5f1b3c205733dc0211a31fef2bab105522fc0fd489a5d31c7cd",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Revenues_CY2013.json": {
+   "bytes": 573005,
+   "sha256": "8a42ba405b9d107085b485666f8f9c68c138e5bb3d84589502cb296a896a03dd",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Revenues_CY2014.json": {
+   "bytes": 550544,
+   "sha256": "cf38a339e888e96d90aa030b053445df34d045c2e33e13e288a06704753834ee",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Revenues_CY2015.json": {
+   "bytes": 516799,
+   "sha256": "76ec53a3653d8a3c32dded41e78a9fd74737b5ce236f29d89ed31d166c817060",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Revenues_CY2016.json": {
+   "bytes": 555670,
+   "sha256": "a067683870f8873d4c36f84d6ed40bf0a279c5a931caab9f86a60f1d986da21a",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Revenues_CY2017.json": {
+   "bytes": 593196,
+   "sha256": "fb9f5f9cb9c3bd811a422ffeb34281039db885d258b849b07b55f678d98d2a5d",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Revenues_CY2018.json": {
+   "bytes": 500061,
+   "sha256": "7c5e117d0a3269f65a2391da40ec4186cb38b63cd505ddb4aae9548d104a51fa",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/Revenues_CY2019.json": {
+   "bytes": 435064,
+   "sha256": "112eb1b4349f7fbd491900b3f92f6f4650eded0987980e35120fa21e36aff39d",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueGoodsNet_CY2013.json": {
+   "bytes": 194130,
+   "sha256": "ec4c7987b2521bd3c8853008161d9a4b7d4c9b9fed854d88b6326ae9bf93141c",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueGoodsNet_CY2014.json": {
+   "bytes": 192885,
+   "sha256": "d6208d36ac315c9c251e2b69824200e2637880f1d88d9954e94bbabdc1676a75",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueGoodsNet_CY2015.json": {
+   "bytes": 183687,
+   "sha256": "cb96d56857a272931a03306ae190a4b4d9a6c094719a86d61059b52389aeab13",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueGoodsNet_CY2016.json": {
+   "bytes": 169435,
+   "sha256": "fc67007c1c58b72cb917c3d5b31df9329aa8c4a8c0f07c8340ac38542bc037ac",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueGoodsNet_CY2017.json": {
+   "bytes": 148539,
+   "sha256": "bc58c59ef74eeec496b420e9321d062d84d1bf12e5156d11f089878bb1c061bb",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueGoodsNet_CY2018.json": {
+   "bytes": 14282,
+   "sha256": "e272d365cd3561eebc679efeb8e6aef17f2fbd5caa547a883cf0218efc542999",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueGoodsNet_CY2019.json": {
+   "bytes": 631,
+   "sha256": "abeb28c9398f67eeb6d444b243768a6dab65bb6ba1af586b77da4a33fd103da6",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueNet_CY2013.json": {
+   "bytes": 345645,
+   "sha256": "8cf08a388c10a416961a161887cb3287436fbe2576b9f4edbe2bf89b972a1d18",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueNet_CY2014.json": {
+   "bytes": 336153,
+   "sha256": "27d0b0b45ecdccf931efeb2faf3ee877375da5b9d6dcd790b8c8168ed86f46a4",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueNet_CY2015.json": {
+   "bytes": 317625,
+   "sha256": "309604c42788d5d06bc61237f650fc249309b687f25793fe8e55b41aba7ce33d",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueNet_CY2016.json": {
+   "bytes": 291924,
+   "sha256": "675f2c7318aff5ab11c35364205888328240d16fb8d501dd00bc14e2a4c05c6c",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueNet_CY2017.json": {
+   "bytes": 251590,
+   "sha256": "b8f1a6a0ab4d5856b7d945987fea3ddb441e37d5d92b7690593f4d6c616b5551",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueNet_CY2018.json": {
+   "bytes": 18714,
+   "sha256": "39925924be2fd57d4804a08243559ad0ac49cdd0d15d4dcd62276a9613fbbe6c",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueNet_CY2019.json": {
+   "bytes": 481,
+   "sha256": "eb4052b67ff7b8f5c297e3dc6fa18ebf165399f1bc96c9fbda8973b6dd34bd23",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueServicesNet_CY2013.json": {
+   "bytes": 126465,
+   "sha256": "237f1833325ba485599354faf6c50249d93f5a9afb37a5eb25e120640ea2f9b3",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueServicesNet_CY2014.json": {
+   "bytes": 121875,
+   "sha256": "8a3e2ac2e56d06a08cf2911707000ca0d05e7884a7e3ec0ca4cf1c15de7a19ea",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueServicesNet_CY2015.json": {
+   "bytes": 115585,
+   "sha256": "38d72a8d69a8a186eebfec3ccc98a8cafd84881240dc212b43aecffdd3a54cfd",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueServicesNet_CY2016.json": {
+   "bytes": 107254,
+   "sha256": "39e05395a23933a3a439a49c5341dcdff20a8f7a9d2995a148839df20bbbb981",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueServicesNet_CY2017.json": {
+   "bytes": 96801,
+   "sha256": "ff125b63895bb74904a47af0b1c97da8175cb4b9b33c53edc6c110b1149c162f",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueServicesNet_CY2018.json": {
+   "bytes": 8291,
+   "sha256": "e05c070e82037397b3a3c97e0c08f7eb8c773ace6cb555866a19453b9a76656d",
+   "modified": "2026-11-12"
+  },
+  "sec/frames/SalesRevenueServicesNet_CY2019.json": {
+   "bytes": 629,
+   "sha256": "b3381309d63bbd9739751e2d15c8d09e2651428b1e7765c914531f6793c21c21",
+   "modified": "2026-11-12"
+  }
+ }
+}
