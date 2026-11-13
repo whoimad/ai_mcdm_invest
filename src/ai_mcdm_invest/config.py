@@ -1,7 +1,8 @@
 """Where the pipeline reads raw data from and writes derived data to.
 
-Stages never build these paths themselves; they receive tables. Only the
-pipeline reads `Settings`.
+Stages never build these paths themselves; they receive tables. Only the two
+entry points read `Settings`: the rebuild (`pipeline.py`) and the SEC download
+(`data/sec_download.py`).
 """
 
 import os
@@ -36,6 +37,21 @@ class Settings:
     def raw_panel_dir(self) -> Path:
         """The yearly fundamentals files (`<year>_Financial_Data.csv`)."""
         return self.raw_dir / "2014 2018"
+
+    @property
+    def raw_sec_dir(self) -> Path:
+        """SEC files fetched by `make fetch`: the ticker list and XBRL frames."""
+        return self.raw_dir / "sec"
+
+    @property
+    def ticker_list_path(self) -> Path:
+        """The SEC's current ticker list (`company_tickers.json`)."""
+        return self.raw_sec_dir / "company_tickers.json"
+
+    @property
+    def raw_frames_dir(self) -> Path:
+        """XBRL frames (`<tag>_<period>.json`), one figure for every filer."""
+        return self.raw_sec_dir / "frames"
 
     @property
     def interim_dir(self) -> Path:

@@ -1,0 +1,186 @@
+{
+ "data": [
+  {
+   "cik": 1000,
+   "entityName": "ALFA Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 1000.0
+  },
+  {
+   "cik": 1001,
+   "entityName": "BRVO Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 2000.0
+  },
+  {
+   "cik": 1002,
+   "entityName": "CHRL Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 3000.0
+  },
+  {
+   "cik": 9002,
+   "entityName": "CHRL Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 3000.0
+  },
+  {
+   "cik": 1004,
+   "entityName": "ECHO Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 5000.0
+  },
+  {
+   "cik": 1006,
+   "entityName": "GOLF Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 7000.0
+  },
+  {
+   "cik": 9003,
+   "entityName": "GOLF Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 7000.0
+  },
+  {
+   "cik": 1007,
+   "entityName": "HOTL Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 8000.0
+  },
+  {
+   "cik": 9005,
+   "entityName": "HOTL Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 8000.0
+  },
+  {
+   "cik": 1008,
+   "entityName": "INDG Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 9000.0
+  },
+  {
+   "cik": 1009,
+   "entityName": "JULT Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 10000.0
+  },
+  {
+   "cik": 1010,
+   "entityName": "KILO Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 11000.0
+  },
+  {
+   "cik": 1011,
+   "entityName": "LIMA Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 12000.0
+  },
+  {
+   "cik": 1012,
+   "entityName": "MIKE Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 13000.0
+  },
+  {
+   "cik": 1013,
+   "entityName": "NOVM Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 14000.0
+  },
+  {
+   "cik": 1014,
+   "entityName": "OSCR Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 15000.0
+  },
+  {
+   "cik": 1015,
+   "entityName": "PAPA Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 16000.0
+  },
+  {
+   "cik": 1016,
+   "entityName": "QUBC Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 17000.0
+  },
+  {
+   "cik": 1017,
+   "entityName": "ROMO Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 18000.0
+  },
+  {
+   "cik": 1018,
+   "entityName": "SIER Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 19000.0
+  },
+  {
+   "cik": 1019,
+   "entityName": "TNGO Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 20000.0
+  },
+  {
+   "cik": 1020,
+   "entityName": "UNFM Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 21000.0
+  },
+  {
+   "cik": 1021,
+   "entityName": "VCTR Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 22000.0
+  },
+  {
+   "cik": 1022,
+   "entityName": "WSKY Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 23000.0
+  },
+  {
+   "cik": 1023,
+   "entityName": "XRAY Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 24000.0
+  },
+  {
+   "cik": 1024,
+   "entityName": "YANK Corp",
+   "end": "2014-12-31",
+   "start": "2014-01-01",
+   "val": 25000.0
+  }
+ ]
+}

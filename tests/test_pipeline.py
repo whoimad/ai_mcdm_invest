@@ -30,3 +30,12 @@ def test_raw_data_location_comes_from_one_setting(monkeypatch, tmp_path: Path) -
 def test_missing_raw_data_folder_names_the_setting(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="AI_MCDM_RAW_DIR"):
         run(Settings(raw_dir=tmp_path / "nowhere", data_dir=tmp_path))
+
+
+def test_rebuild_writes_the_company_links(fixture_raw_dir: Path, tmp_path: Path) -> None:
+    run(Settings(raw_dir=fixture_raw_dir, data_dir=tmp_path))
+
+    links = pd.read_parquet(tmp_path / "interim" / "company_links.parquet")
+    assert len(links) == 125
+    assert set(links["link_method"]) == {"figure_match", "ticker", "unlinked"}
+    assert (tmp_path / "interim" / "company_links.csv").exists()

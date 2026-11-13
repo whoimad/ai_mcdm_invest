@@ -1,0 +1,112 @@
+{
+ "0": {
+  "cik_str": 9001,
+  "ticker": "ALFA",
+  "title": "ALFA Corp"
+ },
+ "1": {
+  "cik_str": 1004,
+  "ticker": "ECHO",
+  "title": "ECHO Corp"
+ },
+ "2": {
+  "cik_str": 1005,
+  "ticker": "FXTR",
+  "title": "FXTR Corp"
+ },
+ "3": {
+  "cik_str": 1006,
+  "ticker": "GOLF",
+  "title": "GOLF Corp"
+ },
+ "4": {
+  "cik_str": 9004,
+  "ticker": "HOTL",
+  "title": "HOTL Corp"
+ },
+ "5": {
+  "cik_str": 1008,
+  "ticker": "INDG",
+  "title": "INDG Corp"
+ },
+ "6": {
+  "cik_str": 1009,
+  "ticker": "JULT",
+  "title": "JULT Corp"
+ },
+ "7": {
+  "cik_str": 1010,
+  "ticker": "KILO",
+  "title": "KILO Corp"
+ },
+ "8": {
+  "cik_str": 1011,
+  "ticker": "LIMA",
+  "title": "LIMA Corp"
+ },
+ "9": {
+  "cik_str": 1012,
+  "ticker": "MIKE",
+  "title": "MIKE Corp"
+ },
+ "10": {
+  "cik_str": 1013,
+  "ticker": "NOVM",
+  "title": "NOVM Corp"
+ },
+ "11": {
+  "cik_str": 1014,
+  "ticker": "OSCR",
+  "title": "OSCR Corp"
+ },
+ "12": {
+  "cik_str": 1015,
+  "ticker": "PAPA",
+  "title": "PAPA Corp"
+ },
+ "13": {
+  "cik_str": 1016,
+  "ticker": "QUBC",
+  "title": "QUBC Corp"
+ },
+ "14": {
+  "cik_str": 1017,
+  "ticker": "ROMO",
+  "title": "ROMO Corp"
+ },
+ "15": {
+  "cik_str": 1018,
+  "ticker": "SIER",
+  "title": "SIER Corp"
+ },
+ "16": {
+  "cik_str": 1019,
+  "ticker": "TNGO",
+  "title": "TNGO Corp"
+ },
+ "17": {
+  "cik_str": 1020,
+  "ticker": "UNFM",
+  "title": "UNFM Corp"
+ },
+ "18": {
+  "cik_str": 1021,
+  "ticker": "VCTR",
+  "title": "VCTR Corp"
+ },
+ "19": {
+  "cik_str": 1022,
+  "ticker": "WSKY",
+  "title": "WSKY Corp"
+ },
+ "20": {
+  "cik_str": 1023,
+  "ticker": "XRAY",
+  "title": "XRAY Corp"
+ },
+ "21": {
+  "cik_str": 1024,
+  "ticker": "YANK",
+  "title": "YANK Corp"
+ }
+}

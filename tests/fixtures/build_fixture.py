@@ -12,11 +12,29 @@ Design (the "known answers" tests rely on):
 - Three extra rows must be dropped by cleaning: ZULU (2014, +2500%, a data
   error), ZZNR (2016, no return) and ZZWO (2017, -100%).
 - ECHO reports no revenue in 2014 (a missing fundamental that must be kept).
+
+SEC files (`raw/sec/`), for the company-link stage. Core company number i
+files under CIK 1000 + i, and XBRL frames report its exact figures, except:
+- ALFA: its ticker now belongs to another filer (CIK 9001), a reused ticker.
+  The figure match (CIK 1000) must win.
+- BRVO: renamed, so missing from today's ticker list; found by figures alone.
+- CHRL: missing from the ticker list, and a second filer (CIK 9002) reports
+  the same figures, so the match is ambiguous and CHRL stays unlinked.
+- DLTA: neither in the ticker list nor in XBRL: unlinked.
+- FXTR: in the ticker list but absent from XBRL: linked by ticker only.
+- GOLF: a second filer (CIK 9003) reports the same figures, but GOLF's own
+  CIK is among the two, so its ticker link is confirmed and kept.
+- HOTL: its ticker now belongs to CIK 9004, and its figures match two other
+  filers (its own and CIK 9005), neither of them 9004: unlinked.
+- ECHO 2014 has no revenue in the panel, so it matches on net income.
 """
 
+import json
 from pathlib import Path
 
-RAW_PANEL_DIR = Path(__file__).parent / "raw" / "2014 2018"
+RAW_DIR = Path(__file__).parent / "raw"
+RAW_PANEL_DIR = RAW_DIR / "2014 2018"
+RAW_SEC_DIR = RAW_DIR / "sec"
 
 CORE = [
     "ALFA", "BRVO", "CHRL", "DLTA", "ECHO", "FXTR", "GOLF", "HOTL", "INDG",
@@ -48,6 +66,22 @@ EXTRA = {
 HEADER = "Revenue,Net Income,Total assets,Total debt,Market Cap,Sector"
 
 
+NOT_IN_TICKER_LIST = {"BRVO", "CHRL", "DLTA"}
+REUSED_TICKERS = {"ALFA": 9001, "HOTL": 9004}
+NOT_IN_XBRL = {"DLTA", "FXTR"}
+SAME_FIGURES_AS = {"CHRL": 9002, "GOLF": 9003, "HOTL": 9005}
+
+
+def cik(ticker: str) -> int:
+    return 1000 + CORE.index(ticker)
+
+
+def figures(i: int, year: int) -> tuple[float, float, float, float, float]:
+    """Revenue, net income, total assets, total debt and market cap of row i."""
+    revenue = 1000.0 * (i + 1) + 10 * (year - 2014)
+    return revenue, revenue * 0.1, revenue * 2, revenue * 0.5, revenue * 3
+
+
 def rows(year: int) -> list[str]:
     loser_returns, floor, step = RETURNS[year]
     returns = dict(zip(LOSERS[year], loser_returns, strict=True))
@@ -57,9 +91,7 @@ def rows(year: int) -> list[str]:
 
     out = [f",{HEADER},{year + 1} PRICE VAR [%],Class"]
     for i, (ticker, ret) in enumerate(listed):
-        revenue = 1000.0 * (i + 1) + 10 * (year - 2014)
-        fundamentals = [revenue, revenue * 0.1, revenue * 2, revenue * 0.5, revenue * 3]
-        cells = [f"{v:.1f}" for v in fundamentals]
+        cells = [f"{v:.1f}" for v in figures(i, year)]
         if (ticker, year) == ("ECHO", 2014):
             cells[0] = ""
         ret_cell = "" if ret is None else f"{ret}"
@@ -68,8 +100,41 @@ def rows(year: int) -> list[str]:
     return out
 
 
+def ticker_list() -> dict:
+    listed = [t for t in CORE if t not in NOT_IN_TICKER_LIST]
+    ciks = {t: REUSED_TICKERS.get(t, cik(t)) for t in listed}
+    return {
+        str(n): {"cik_str": ciks[t], "ticker": t, "title": f"{t} Corp"}
+        for n, t in enumerate(listed)
+    }
+
+
+def frames(year: int) -> dict[str, dict]:
+    """The year's XBRL frames: total assets, revenue and net income per filer."""
+    assets, revenue, net_income = [], [], []
+    for i, ticker in enumerate(CORE):
+        if ticker in NOT_IN_XBRL:
+            continue
+        rev, ni, total_assets, _, _ = figures(i, year)
+        filers = [cik(ticker)] + ([SAME_FIGURES_AS[ticker]] if ticker in SAME_FIGURES_AS else [])
+        for filer in filers:
+            point = {"cik": filer, "entityName": f"{ticker} Corp", "end": f"{year}-12-31"}
+            assets.append(point | {"val": total_assets})
+            revenue.append(point | {"start": f"{year}-01-01", "val": rev})
+            net_income.append(point | {"start": f"{year}-01-01", "val": ni})
+    return {
+        f"Assets_CY{year}Q4I": {"data": assets},
+        f"Revenues_CY{year}": {"data": revenue},
+        f"NetIncomeLoss_CY{year}": {"data": net_income},
+    }
+
+
 if __name__ == "__main__":
     RAW_PANEL_DIR.mkdir(parents=True, exist_ok=True)
+    (RAW_SEC_DIR / "frames").mkdir(parents=True, exist_ok=True)
     for year in RETURNS:
         path = RAW_PANEL_DIR / f"{year}_Financial_Data.csv"
         path.write_text("\n".join(rows(year)) + "\n")
+        for name, frame in frames(year).items():
+            (RAW_SEC_DIR / "frames" / f"{name}.json").write_text(json.dumps(frame, indent=1))
+    (RAW_SEC_DIR / "company_tickers.json").write_text(json.dumps(ticker_list(), indent=1))

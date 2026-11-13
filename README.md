@@ -17,7 +17,8 @@ uv sync
 
 | Command | What it does |
 |---|---|
-| `make all` | Rebuilds every derived table from raw data |
+| `make fetch` | Downloads the SEC files the rebuild reads (needs the network; run once) |
+| `make all` | Rebuilds every derived table from raw data, offline |
 | `make test` | Runs the test suite (needs neither the raw data nor a GPU) |
 | `make lint` | Runs the linter, the format check and the type checker |
 | `make check` | `lint` and `test` together; what CI runs |
@@ -25,7 +26,17 @@ uv sync
 ## Data
 
 Raw data is only read, never copied or changed. Its location is one setting,
-the `AI_MCDM_RAW_DIR` environment variable (default `~/maids/data`). To try the
+the `AI_MCDM_RAW_DIR` environment variable (default `~/maids/data`). It holds:
+
+| Folder | Contents | Source |
+|---|---|---|
+| `2014 2018/` | Kaggle "200+ Financial Indicators of US Stocks", one CSV per fiscal year | Downloaded by hand |
+| `sec/company_tickers.json` | Today's SEC ticker list | `make fetch` |
+| `sec/frames/` | XBRL frames for calendar 2013-2019: total assets, revenue (7 tags), net income, for every filer | `make fetch` |
+
+`make fetch` only adds files that are missing and never rewrites one. The SEC
+asks automated clients to name themselves; set `SEC_USER_AGENT` to override the
+generic default. To try the
 pipeline without the raw data, point it at the test fixture:
 
 ```
@@ -38,10 +49,19 @@ plus a CSV copy to open by hand. `AI_MCDM_DATA_DIR` overrides the location.
 | Table | Contents |
 |---|---|
 | `data/interim/kaggle_clean` | Clean panel: one row per ticker and fiscal year (2014–2018), 221 fundamentals, `sector`, `next_year_return` (%) and `tail_loss` |
+| `data/interim/company_links` | Each clean-panel row's SEC filer: `cik`, `link_method` (`figure_match`, `ticker`, `unlinked`), `figure_match` (`matched`, `ambiguous`, `none`), the CIK each method found, and the match evidence (filer name, period end, which figures matched) |
 
 `tail_loss` marks the worst 20% of next-year returns within each fiscal year.
 Rows whose next-year return is missing, above +1000% or at most -100% are
 dropped, because they cannot be labelled.
+
+`company_links` has one row per clean-panel row. A row is linked by its own
+figures first: total assets, plus revenue or net income, must equal one SEC
+filer's XBRL figures within 0.1%, for a period ending in the same fiscal year.
+Today's ticker list is used only when the figures find no filer; where both
+find one and they differ, the figures win (the ticker was usually reused by a
+later company). A match to several filers is rejected as `ambiguous`; the
+row then keeps its ticker link only if that filer is one of those matched.
 
 ## Layout
 

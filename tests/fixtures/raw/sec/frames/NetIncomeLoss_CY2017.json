@@ -1,0 +1,186 @@
+{
+ "data": [
+  {
+   "cik": 1000,
+   "entityName": "ALFA Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 103.0
+  },
+  {
+   "cik": 1001,
+   "entityName": "BRVO Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 203.0
+  },
+  {
+   "cik": 1002,
+   "entityName": "CHRL Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 303.0
+  },
+  {
+   "cik": 9002,
+   "entityName": "CHRL Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 303.0
+  },
+  {
+   "cik": 1004,
+   "entityName": "ECHO Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 503.0
+  },
+  {
+   "cik": 1006,
+   "entityName": "GOLF Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 703.0
+  },
+  {
+   "cik": 9003,
+   "entityName": "GOLF Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 703.0
+  },
+  {
+   "cik": 1007,
+   "entityName": "HOTL Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 803.0
+  },
+  {
+   "cik": 9005,
+   "entityName": "HOTL Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 803.0
+  },
+  {
+   "cik": 1008,
+   "entityName": "INDG Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 903.0
+  },
+  {
+   "cik": 1009,
+   "entityName": "JULT Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1003.0
+  },
+  {
+   "cik": 1010,
+   "entityName": "KILO Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1103.0
+  },
+  {
+   "cik": 1011,
+   "entityName": "LIMA Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1203.0
+  },
+  {
+   "cik": 1012,
+   "entityName": "MIKE Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1303.0
+  },
+  {
+   "cik": 1013,
+   "entityName": "NOVM Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1403.0
+  },
+  {
+   "cik": 1014,
+   "entityName": "OSCR Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1503.0
+  },
+  {
+   "cik": 1015,
+   "entityName": "PAPA Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1603.0
+  },
+  {
+   "cik": 1016,
+   "entityName": "QUBC Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1703.0
+  },
+  {
+   "cik": 1017,
+   "entityName": "ROMO Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1803.0
+  },
+  {
+   "cik": 1018,
+   "entityName": "SIER Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 1903.0
+  },
+  {
+   "cik": 1019,
+   "entityName": "TNGO Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 2003.0
+  },
+  {
+   "cik": 1020,
+   "entityName": "UNFM Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 2103.0
+  },
+  {
+   "cik": 1021,
+   "entityName": "VCTR Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 2203.0
+  },
+  {
+   "cik": 1022,
+   "entityName": "WSKY Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 2303.0
+  },
+  {
+   "cik": 1023,
+   "entityName": "XRAY Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 2403.0
+  },
+  {
+   "cik": 1024,
+   "entityName": "YANK Corp",
+   "end": "2017-12-31",
+   "start": "2017-01-01",
+   "val": 2503.0
+  }
+ ]
+}
