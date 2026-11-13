@@ -104,7 +104,11 @@ EXTRA = {
 SHARE_CLASSES = {
     2018: [("LIMAK", "LIMA", 2.0, 40.0), ("LIMAP", "LIMA", None, -30.0)],
 }
-HEADER = "Revenue,Net Income,Total assets,Total debt,Market Cap,debtEquityRatio,Sector"
+HEADER = (
+    "Revenue,Net Income,Total assets,Total debt,Market Cap,debtEquityRatio,"
+    "currentRatio,returnOnEquity,netProfitMargin,priceEarningsRatio,priceToBookRatio,"
+    "interestCoverage,Sector"
+)
 
 
 NOT_IN_TICKER_LIST = {"BRVO", "CHRL", "DLTA"}
@@ -128,6 +132,21 @@ def debt_to_equity(i: int) -> str:
     return f"{(i * 7) % 11 / 5 - 0.2:.2f}"
 
 
+def ratios(i: int) -> list[str]:
+    """The other five textbook ratios of row i, plus price-to-book, after debt-to-equity.
+
+    ROMO (i = 17) has a negative price-to-earnings ratio; FXTR (i = 5) reports
+    no interest coverage.
+    """
+    current = 0.5 + (i * 3) % 7 / 4
+    roe = (i * 5) % 9 / 30 - 0.05
+    margin = (i * 4) % 7 / 25
+    pe = -8.0 if i == 17 else 5 + (i * 11) % 13 * 3
+    pb = 0.4 + (i * 2) % 9 / 2
+    coverage = "" if i == 5 else f"{1 + (i * 6) % 10 * 2:.1f}"
+    return [f"{current:.2f}", f"{roe:.3f}", f"{margin:.3f}", f"{pe:.1f}", f"{pb:.2f}", coverage]
+
+
 def rows(year: int) -> list[str]:
     loser_returns, floor, step = RETURNS[year]
     returns = dict(zip(LOSERS[year], loser_returns, strict=True))
@@ -142,14 +161,26 @@ def rows(year: int) -> list[str]:
             cells[0] = ""
         ret_cell = "" if ret is None else f"{ret}"
         label = "" if ret is None else str(int(ret > 0))
-        out.append(",".join([ticker, *cells, debt_to_equity(i), SECTORS[i % 5], ret_cell, label]))
+        out.append(
+            ",".join(
+                [ticker, *cells, debt_to_equity(i), *ratios(i), SECTORS[i % 5], ret_cell, label]
+            )
+        )
     for ticker, issuer, cap_multiple, ret in SHARE_CLASSES.get(year, []):
         i = CORE.index(issuer)
         cells = [f"{v:.1f}" for v in figures(i, year)]
         cells[4] = "" if cap_multiple is None else f"{figures(i, year)[4] * cap_multiple:.1f}"
         out.append(
             ",".join(
-                [ticker, *cells, debt_to_equity(i), SECTORS[i % 5], f"{ret}", str(int(ret > 0))]
+                [
+                    ticker,
+                    *cells,
+                    debt_to_equity(i),
+                    *ratios(i),
+                    SECTORS[i % 5],
+                    f"{ret}",
+                    str(int(ret > 0)),
+                ]
             )
         )
     return out

@@ -10,6 +10,8 @@ from pathlib import Path
 import pandas as pd
 
 FISCAL_YEARS = range(2014, 2019)
+# Held out for the test (decision 5.1): rules are developed on the years before.
+TEST_YEARS = range(2017, 2019)
 
 # A next-year return above this (in %) is almost surely a split or data error.
 MAX_PLAUSIBLE_RETURN = 1000.0

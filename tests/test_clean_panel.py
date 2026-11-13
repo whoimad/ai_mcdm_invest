@@ -43,6 +43,12 @@ def test_keeps_fundamentals_sector_and_return(raw_panel: pd.DataFrame) -> None:
         "Total debt",
         "Market Cap",
         "debtEquityRatio",
+        "currentRatio",
+        "returnOnEquity",
+        "netProfitMargin",
+        "priceEarningsRatio",
+        "priceToBookRatio",
+        "interestCoverage",
         "next_year_return",
         "tail_loss",
     ]

@@ -7,25 +7,30 @@
 4. `going_concern_items`: "going concern" appears in many Items besides the
    auditor's report, so a keyword search is not enough.
 
-Each figure is drawn from the pipeline's tables only, and written as PDF (for
-the report) and PNG (to look at), with its caption in `captions.md`. Run with
-`make figures` to redraw from the tables on disk, or as the last step of
-`make all`.
+Drawn with the conventions in `common.py`; `draw.py` writes them.
 """
-
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Literal
 
 import numpy as np
 import pandas as pd
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-from matplotlib.patches import Patch
 
-from ai_mcdm_invest.config import Settings
 from ai_mcdm_invest.data.join_report import join_steps
 from ai_mcdm_invest.data.panel import TAIL_SHARE
+from ai_mcdm_invest.figures.common import (
+    BLUE,
+    CORPUS,
+    INK_MUTED,
+    INK_SECONDARY,
+    KAGGLE,
+    ORANGE,
+    QUINTILES,
+    SEC,
+    ReportFigure,
+    new_figure,
+    quintile,
+    style_axes,
+    swatch,
+    years_label,
+)
 
 # Qwen2.5's 32k context, in tokens; the filings table estimates tokens as characters ÷ 4.
 CONTEXT_WINDOW_TOKENS = 32_768
@@ -34,9 +39,8 @@ WINDOW_ITEMS = ["1A", "7", "8"]
 # Histogram range of section lengths, as powers of ten tokens; longer or shorter
 # sections are drawn in the end bins.
 LENGTH_RANGE = (2, 6)
-# The leverage measure among the six textbook ratios (decision 4.1), cut in fifths.
+# The leverage measure among the six textbook ratios (decision 4.1), cut in quintiles.
 LEVERAGE = "debtEquityRatio"
-QUINTILES = 5
 QUINTILE_NAMES = ["least indebted", "second", "third", "fourth", "most indebted"]
 
 # Sector labels that would overlap a neighbour in the leverage scatter.
@@ -57,35 +61,13 @@ ITEM_ORDER = [
 # Where the auditor's report and the financial statements sit.
 STATEMENT_ITEMS = {"8", "15"}
 
-# Source citations for the captions.
-KAGGLE = 'Kaggle "200+ Financial Indicators of US Stocks"'
-SEC = "SEC submissions and XBRL frames"
-CORPUS = "EDGAR-CORPUS 10-K sections"
-
-# Reference palette (dataviz skill), light mode for print.
-BLUE = "#2a78d6"
-ORANGE = "#eb6834"
-INK = "#0b0b0b"
-INK_SECONDARY = "#52514e"
-INK_MUTED = "#8a8985"
-GRID = "#e4e3df"
-
-
-@dataclass(frozen=True)
-class StorylineFigure:
-    """A drawn figure, its file name and its caption (sample size, source, years)."""
-
-    name: str
-    figure: Figure
-    caption: str
-
 
 def storyline_figures(
     clean: pd.DataFrame,
     links: pd.DataFrame,
     joined: pd.DataFrame,
     filings: pd.DataFrame,
-) -> list[StorylineFigure]:
+) -> list[ReportFigure]:
     """The four storyline figures, from the clean panel, links, joined panel and filings."""
     return [
         join_funnel(clean, links, joined, filings),
@@ -93,31 +75,6 @@ def storyline_figures(
         section_lengths(filings),
         going_concern_items(filings),
     ]
-
-
-def write_figures(figures: list[StorylineFigure], folder: Path) -> Path:
-    """Write each figure as PDF and PNG, and every caption to `captions.md`; return that path."""
-    folder.mkdir(parents=True, exist_ok=True)
-    for item in figures:
-        item.figure.savefig(folder / f"{item.name}.pdf", metadata={"CreationDate": None})
-        item.figure.savefig(folder / f"{item.name}.png", dpi=200)
-    captions = folder / "captions.md"
-    captions.write_text(
-        "# Figure captions\n\nRegenerated with the figures; paste into the report.\n"
-        + "".join(f"\n## {item.name}\n\n{item.caption}\n" for item in figures)
-    )
-    return captions
-
-
-def draw_figures(settings: Settings) -> Path:
-    """Redraw the storyline figures from the tables under `settings.data_dir`."""
-    figures = storyline_figures(
-        pd.read_parquet(settings.interim_dir / "kaggle_clean.parquet"),
-        pd.read_parquet(settings.interim_dir / "company_links.parquet"),
-        pd.read_parquet(settings.processed_dir / "panel.parquet"),
-        pd.read_parquet(settings.processed_dir / "filings.parquet"),
-    )
-    return write_figures(figures, settings.figures_dir)
 
 
 # --- 1. Join funnel ----------------------------------------------------------
@@ -128,7 +85,7 @@ def join_funnel(
     links: pd.DataFrame,
     joined: pd.DataFrame,
     filings: pd.DataFrame,
-) -> StorylineFigure:
+) -> ReportFigure:
     """Companies and tail losers left at each step from the panel to the needed 10-K Items."""
     steps = join_steps(clean, links, joined).groupby("step", sort=False).sum()
     has_10k = filings["filing_date"].notna()
@@ -157,7 +114,7 @@ def join_funnel(
     ).T
     share = funnel / funnel.iloc[0]
 
-    figure = _new_figure(clean, figsize=(7.5, 4.4))
+    figure = new_figure(clean, figsize=(7.5, 4.4))
     ax = figure.add_subplot()
     y = np.arange(len(funnel))
     height = 0.38
@@ -186,14 +143,14 @@ def join_funnel(
     ax.set_xticks([0, 0.25, 0.5, 0.75, 1], ["0%", "25%", "50%", "75%", "100%"])
     ax.set_xlabel("Share of the clean panel left")
     figure.legend(loc="outside lower center", ncols=2, fontsize=8, frameon=False)
-    _style(ax, grid_axis="x")
+    style_axes(ax, grid_axis="x")
     ax.set_title(
         "Figure matching keeps the tail losers a ticker join would lose",
         loc="left",
         fontsize=10,
     )
 
-    years = _years(clean)
+    years = years_label(clean)
     total = funnel.iloc[0]
     caption = (
         f"Companies and tail losers left at each step from the fundamentals panel to the "
@@ -205,13 +162,13 @@ def join_funnel(
         f"n = {total['companies']:,} company-years ({total['tail_losers']:,} tail losers). "
         f"Source: {KAGGLE}; {SEC}; {CORPUS}."
     )
-    return StorylineFigure("join_funnel", figure, caption)
+    return ReportFigure("join_funnel", figure, caption)
 
 
 # --- 2. Leverage against tail-loss rate ---------------------------------------
 
 
-def leverage_tail_loss(joined: pd.DataFrame) -> StorylineFigure:
+def leverage_tail_loss(joined: pd.DataFrame) -> ReportFigure:
     """Tail-loss rate by debt-to-equity quintile, market-wide and within sectors.
 
     Debt-to-equity is cut into quintiles within each fiscal year, either over
@@ -221,8 +178,8 @@ def leverage_tail_loss(joined: pd.DataFrame) -> StorylineFigure:
     rows = joined[["fiscal_year", "sector", LEVERAGE, "tail_loss"]].dropna()
     negative = rows[rows[LEVERAGE] < 0]
     rows = rows[rows[LEVERAGE] >= 0].copy()
-    rows["market_quintile"] = rows.groupby("fiscal_year")[LEVERAGE].transform(_quintile)
-    rows["sector_quintile"] = rows.groupby(["fiscal_year", "sector"])[LEVERAGE].transform(_quintile)
+    rows["market_quintile"] = rows.groupby("fiscal_year")[LEVERAGE].transform(quintile)
+    rows["sector_quintile"] = rows.groupby(["fiscal_year", "sector"])[LEVERAGE].transform(quintile)
     market = rows.groupby("market_quintile")["tail_loss"].mean()
     within = rows.groupby("sector_quintile")["tail_loss"].mean()
     sectors = rows.groupby("sector").agg(
@@ -230,7 +187,7 @@ def leverage_tail_loss(joined: pd.DataFrame) -> StorylineFigure:
     )
     base_rate = pd.concat([rows, negative])["tail_loss"].mean()
 
-    figure = _new_figure(joined, figsize=(9, 4))
+    figure = new_figure(joined, figsize=(9, 4))
     left, right = figure.subplots(1, 2, width_ratios=[1.15, 1])
     x = np.arange(1, QUINTILES + 1)
     for series, color, label in [
@@ -270,7 +227,7 @@ def leverage_tail_loss(joined: pd.DataFrame) -> StorylineFigure:
     left.set_xlabel("Debt-to-equity quintile, cut each fiscal year")
     left.legend(loc="lower left", fontsize=8, frameon=False)
     left.set_title("More debt, fewer tail losses: the wrong way round", loc="left", fontsize=10)
-    _style(left, grid_axis="y")
+    style_axes(left, grid_axis="y")
 
     right.scatter(
         sectors["median_leverage"],
@@ -298,13 +255,13 @@ def leverage_tail_loss(joined: pd.DataFrame) -> StorylineFigure:
     right.set_xlabel("Median debt-to-equity of the sector")
     right.set_ylabel("Tail-loss rate of the sector")
     right.set_title("Why: the most indebted sectors are the safest", loc="left", fontsize=10)
-    _style(right, grid_axis="both")
+    style_axes(right, grid_axis="both")
 
     market, within = market.reindex(x), within.reindex(x)
     lowest = QUINTILE_NAMES[int(np.nanargmin(market.to_numpy()))]
     caption = (
         f"Share of companies in the worst {TAIL_SHARE:.0%} of next-year returns, by "
-        f"debt-to-equity quintile, {_years(joined)}, pooled over years. Left: with quintiles "
+        f"debt-to-equity quintile, {years_label(joined)}, pooled over years. Left: with quintiles "
         f"cut over the whole market each year (blue), the rate goes from {market.iloc[0]:.0%} "
         f"for the least indebted fifth to {market.min():.0%} for the {lowest} and "
         f"{market.iloc[-1]:.0%} for the most indebted, the opposite of the textbook reading "
@@ -316,21 +273,15 @@ def leverage_tail_loss(joined: pd.DataFrame) -> StorylineFigure:
         f"against its tail-loss rate. n = {len(rows) + len(negative):,} company-years of the "
         f"joined panel with a debt-to-equity ratio. Source: {KAGGLE}."
     )
-    return StorylineFigure("leverage_tail_loss", figure, caption)
-
-
-def _quintile(values: pd.Series) -> pd.Series:
-    """Quintile 1-5 of each value within `values`; ties are split by order."""
-    order = values.rank(method="first").astype(int) - 1
-    return order * QUINTILES // len(values) + 1
+    return ReportFigure("leverage_tail_loss", figure, caption)
 
 
 # --- 3. Section lengths against the context window ------------------------------
 
 
-def section_lengths(filings: pd.DataFrame) -> StorylineFigure:
+def section_lengths(filings: pd.DataFrame) -> ReportFigure:
     """Estimated tokens of Items 1A, 7 and 8, against the LLM's context window."""
-    figure = _new_figure(filings, figsize=(9, 3.4))
+    figure = new_figure(filings, figsize=(9, 3.4))
     axes = figure.subplots(1, len(WINDOW_ITEMS), sharex=True, sharey=True)
     bins = np.logspace(*LENGTH_RANGE, 12 * (LENGTH_RANGE[1] - LENGTH_RANGE[0]) + 1)
     summaries = []
@@ -359,7 +310,7 @@ def section_lengths(filings: pd.DataFrame) -> StorylineFigure:
             va="top",
         )
         ax.set_xlabel("Estimated tokens (characters ÷ 4)")
-        _style(ax, grid_axis="y")
+        style_axes(ax, grid_axis="y")
     axes[0].set_ylabel("10-Ks")
     axes[-1].annotate(
         f"{CONTEXT_WINDOW_TOKENS // 1024}k window",
@@ -373,7 +324,7 @@ def section_lengths(filings: pd.DataFrame) -> StorylineFigure:
 
     caption = (
         f"Estimated length of Items 1A (risk factors), 7 (management's discussion) and 8 "
-        f"(financial statements) of the joined panel's 10-Ks, {_years(filings)}, on a log "
+        f"(financial statements) of the joined panel's 10-Ks, {years_label(filings)}, on a log "
         f"scale; the orange line is the {CONTEXT_WINDOW_TOKENS:,}-token context of the local "
         f"LLM, before the prompt and answer take their share. Share of the sections present "
         f"that are longer than the window: {'; '.join(summaries)}. Absent and stub sections "
@@ -382,13 +333,13 @@ def section_lengths(filings: pd.DataFrame) -> StorylineFigure:
         f"drawn in the end bins. "
         f"n = {int(filings['in_corpus'].sum()):,} 10-Ks with text. Source: {CORPUS}."
     )
-    return StorylineFigure("section_lengths", figure, caption)
+    return ReportFigure("section_lengths", figure, caption)
 
 
 # --- 4. Where going-concern wording appears -----------------------------------
 
 
-def going_concern_items(filings: pd.DataFrame) -> StorylineFigure:
+def going_concern_items(filings: pd.DataFrame) -> ReportFigure:
     """10-Ks whose Item contains "going concern", for each Item.
 
     Items mentioned in fewer than `MINOR_ITEM_SHARE` of those 10-Ks are drawn
@@ -414,7 +365,7 @@ def going_concern_items(filings: pd.DataFrame) -> StorylineFigure:
         values.append(int(items.map(lambda found: bool(found & minor)).sum()))
         colors.append(BLUE)
 
-    figure = _new_figure(filings, figsize=(7.5, 3.8))
+    figure = new_figure(filings, figsize=(7.5, 3.8))
     ax = figure.add_subplot()
     y = np.arange(len(values))
     ax.barh(y, values, color=colors, height=0.7)
@@ -433,8 +384,8 @@ def going_concern_items(filings: pd.DataFrame) -> StorylineFigure:
     ax.set_xlabel('10-Ks whose Item contains "going concern"')
     figure.legend(
         handles=[
-            _swatch(ORANGE, "Items 8 and 15: financial statements and auditor's report"),
-            _swatch(BLUE, "Other Items"),
+            swatch(ORANGE, "Items 8 and 15: financial statements and auditor's report"),
+            swatch(BLUE, "Other Items"),
         ],
         loc="outside lower center",
         ncols=2,
@@ -446,10 +397,10 @@ def going_concern_items(filings: pd.DataFrame) -> StorylineFigure:
         loc="left",
         fontsize=10,
     )
-    _style(ax, grid_axis="x")
+    style_axes(ax, grid_axis="x")
 
     caption = (
-        f'Number of 10-Ks whose Item contains the words "going concern", {_years(filings)}; '
+        f'Number of 10-Ks whose Item contains the words "going concern", {years_label(filings)}; '
         f"percentages are of the {any_mention:,} 10-Ks with the words anywhere, and a 10-K "
         f"counts once in each Item that has them. {beyond:,} of these 10-Ks "
         f"({beyond / max(any_mention, 1):.0%}) have the words in an Item other than 8 and 15, "
@@ -458,47 +409,4 @@ def going_concern_items(filings: pd.DataFrame) -> StorylineFigure:
         f"A keyword search alone cannot tell an auditor's doubt from these other mentions. "
         f"n = {len(with_text):,} 10-Ks with text. Source: {CORPUS}."
     )
-    return StorylineFigure("going_concern_items", figure, caption)
-
-
-# --- Shared ------------------------------------------------------------------
-
-
-def _new_figure(table: pd.DataFrame, figsize: tuple[float, float]) -> Figure:
-    """An empty figure whose top line names the fiscal and return years of `table`."""
-    figure = Figure(figsize=figsize, layout="constrained")
-    years = _years(table)
-    figure.suptitle(years[0].upper() + years[1:], x=0.01, ha="left", fontsize=8, color=INK_MUTED)
-    return figure
-
-
-def _years(table: pd.DataFrame) -> str:
-    """'fiscal 2014–2018, returns in 2015–2019' for the years in `table`."""
-    first, last = int(table["fiscal_year"].min()), int(table["fiscal_year"].max())
-    return f"fiscal {first}–{last}, returns in {first + 1}–{last + 1}"
-
-
-def _style(ax: Axes, grid_axis: Literal["both", "x", "y"]) -> None:
-    """Recessive axes: no top or right spine, a light grid behind the marks."""
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.spines[["left", "bottom"]].set_color(INK_MUTED)
-    ax.tick_params(colors=INK_SECONDARY, labelsize=8)
-    ax.xaxis.label.set_color(INK_SECONDARY)
-    ax.yaxis.label.set_color(INK_SECONDARY)
-    ax.title.set_color(INK)
-    ax.grid(axis=grid_axis, color=GRID, linewidth=0.8)
-    ax.set_axisbelow(True)
-
-
-def _swatch(color: str, label: str) -> Patch:
-    """A legend entry for bars of `color`."""
-    return Patch(color=color, label=label)
-
-
-def main() -> None:
-    path = draw_figures(Settings.from_env())
-    print(f"storyline figures: written to {path.parent}")
-
-
-if __name__ == "__main__":
-    main()
+    return ReportFigure("going_concern_items", figure, caption)

@@ -112,13 +112,33 @@ def _describe_file(path: Path, ciks: set[int]) -> list[dict]:
     return rows
 
 
-def describe_record(record: dict) -> dict:
-    """The facts `load_corpus` keeps about one corpus record."""
-    sections = {
+def load_record_sections(corpus_dir: Path, cik: int, corpus_year: int) -> dict[str, str]:
+    """The Item texts (`"1A"` -> text) of the corpus record of `cik` labelled `corpus_year`."""
+    for path in sorted(corpus_dir.glob(f"{corpus_year}_*.jsonl")):
+        with path.open("rb") as file:
+            for line in file:
+                prefix = CIK_PREFIX.match(line)
+                if prefix and int(prefix.group(1)) != cik:
+                    continue  # skip parsing records of other filers
+                record = json.loads(line)
+                if int(record["cik"]) == cik and int(record["year"]) == corpus_year:
+                    return _sections(record)
+    raise FileNotFoundError(
+        f"no corpus record for CIK {cik} labelled {corpus_year} in {corpus_dir}"
+    )
+
+
+def _sections(record: dict) -> dict[str, str]:
+    return {
         key.removeprefix("section_"): text or ""
         for key, text in record.items()
         if key.startswith("section_")
     }
+
+
+def describe_record(record: dict) -> dict:
+    """The facts `load_corpus` keeps about one corpus record."""
+    sections = _sections(record)
     facts: dict = {
         "cik": int(record["cik"]),
         "corpus_year": int(record["year"]),
@@ -157,7 +177,7 @@ def _date(month: str, day: str, year: str) -> date | None:
         return None
 
 
-def _body(section: str) -> str:
+def section_body(section: str) -> str:
     """The section without its heading and title lines ("Item 1A. Risk Factors", "PART II")."""
     lines = [
         line
@@ -173,7 +193,7 @@ def _is_title(line: str) -> bool:
 
 
 def _is_stub(section: str) -> bool:
-    body = _body(section)
+    body = section_body(section)
     if len(body) < MIN_BODY_CHARS or not SENTENCE.search(body):
         return True
     opening = body[:STUB_OPENING_CHARS]
@@ -187,7 +207,7 @@ def _paragraph_fingerprints(section: str) -> list[tuple[bytes, ...]]:
     numbering, punctuation or spacing do not count as changes.
     """
     paragraphs = []
-    for paragraph in _body(section).splitlines():
+    for paragraph in section_body(section).splitlines():
         if len(paragraph.strip()) < MIN_PARAGRAPH_CHARS:
             continue
         sentences = [

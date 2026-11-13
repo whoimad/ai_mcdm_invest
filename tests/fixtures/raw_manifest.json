@@ -2,28 +2,28 @@
  "recorded": "2026-11-13",
  "files": {
   "2014 2018/2014_Financial_Data.csv": {
-   "bytes": 1785,
-   "sha256": "13009c0d4d733a73c2855d157b3c86200c6aa17d458f3bb558c48f29c08466f2",
+   "bytes": 2697,
+   "sha256": "7b5f2e00163b0915bd02949110de1738bb0c720ad643bec4dd85f960aa9d20f9",
    "modified": "2026-11-13"
   },
   "2014 2018/2015_Financial_Data.csv": {
-   "bytes": 1738,
-   "sha256": "9570bca30de3c7c278e0398943c6b3be344ed3389bc465237fbd64fe850a916f",
+   "bytes": 2619,
+   "sha256": "cb49ddd8682f7d9280c530889520485b14a504a3c0c885cd30f2cb2fb6904494",
    "modified": "2026-11-13"
   },
   "2014 2018/2016_Financial_Data.csv": {
-   "bytes": 1784,
-   "sha256": "ed54ee7f20f565dd4475d1c696b61edf26ca5ce6d94dacf8e05407ee4974a3d0",
+   "bytes": 2696,
+   "sha256": "07b70886f84107eadbbfac9911d7b6cb0d78cb956c3c8d657b0cec9090c62e07",
    "modified": "2026-11-13"
   },
   "2014 2018/2017_Financial_Data.csv": {
-   "bytes": 1789,
-   "sha256": "61f79779e43c7d538d51ad4bda489d2710e85d154a99949438ab236c22420fd0",
+   "bytes": 2701,
+   "sha256": "33dabf9f9ec515bd32c9ed877bc60972c2d09baba79f57db9604fd1f366c6c65",
    "modified": "2026-11-13"
   },
   "2014 2018/2018_Financial_Data.csv": {
-   "bytes": 1845,
-   "sha256": "6d7cd4b9e80c47d8901b2fe041b2c2c385b639bd1c3ad3d5b418a419fe17f98d",
+   "bytes": 2792,
+   "sha256": "48515f474db696dc955898d65548543177fa2271d20c5c20f1ca7873b2180468",
    "modified": "2026-11-13"
   },
   "edgar_corpus/2012_train.jsonl": {

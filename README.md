@@ -68,6 +68,7 @@ plus a CSV copy to open by hand, and reports as Markdown under `data/reports/`.
 | `data/interim/company_links` | Each clean-panel row's SEC filer: `cik`, `link_method` (`figure_match`, `ticker`, `unlinked`), `figure_match` (`matched`, `ambiguous`, `none`), the CIK each method found, and the match evidence (filer name, period end, which figures matched) |
 | `data/processed/panel` | Joined panel: one row per SEC filer (`cik`) and fiscal year, with the kept row's `ticker` and `link_method`, `sector`, the 221 fundamentals, `next_year_return` and `tail_loss` |
 | `data/processed/filings` | Filings table: one row per joined-panel row, describing the 10-K for its period (see below) |
+| `data/processed/worked_example` | The 10-K passages the worked-example figure quotes: `ticker`, `cik`, `fiscal_year`, `item`, `passage` |
 | `data/reports/join_report.md` | Companies and tail losers kept and lost at each join step per year, the fiscal 2017 coverage, and 20 random figure-match recoveries to check by eye |
 
 `tail_loss` marks the worst 20% of next-year returns within each fiscal year.
@@ -128,10 +129,11 @@ either year has no Item 1A.
 
 ## Figures
 
-`make all` ends by drawing the report's four storyline figures into
-`data/figures/`, each as PDF (for the report) and PNG, with every caption
-(sample size, source, fiscal and return years) in `data/figures/captions.md`.
-They read only the pipeline's tables:
+`make all` ends by drawing the report's figures into `data/figures/`, each as
+PDF (for the report) and PNG, with every caption (sample size, source, fiscal
+and return years) in `data/figures/captions.md`. They read only the pipeline's
+tables, and describe the data only: no model result appears in them. The four
+storyline figures carry the report's argument:
 
 | Figure | Shows |
 |---|---|
@@ -139,6 +141,28 @@ They read only the pipeline's tables:
 | `leverage_tail_loss` | Tail-loss rate by debt-to-equity quintile, cut across the market and within sectors, with negative equity apart; beside it each sector's median debt-to-equity against its tail-loss rate |
 | `section_lengths` | Estimated tokens of Items 1A, 7 and 8 (stubs left out) against the 32,768-token context window, with the share over it |
 | `going_concern_items` | How many 10-Ks have "going concern" in each Item, Items 8 and 15 (statements and auditor's report) set apart |
+
+The rest of the exploratory section:
+
+| Figure | Shows |
+|---|---|
+| `companies_per_sector` | Companies (SEC filers) per sector, with their company-years |
+| `missing_values` | Share of fundamentals missing, by column group (the source's six statements) and sector |
+| `market_cap` | Market-cap histogram on a log scale, with the median and the usual size bounds |
+| `valuation_by_sector` | Price-to-earnings and price-to-book by sector (box plots, log scale), with the share of losses |
+| `criteria_correlation` | Rank correlation of the six textbook criteria, ranked within each fiscal year |
+| `return_distribution` | Next-year returns per fiscal year, with each year's tail-loss cut-off |
+| `tail_loss_by_size_sector` | Tail-loss rate by market-cap quintile and by sector |
+| `item1a_length` | Item 1A length per fiscal year, for all filers and for those present every year |
+| `filing_lag` | Days from fiscal year end to the 10-K, tail losers against others, with the SEC deadlines |
+| `item1a_change` | Share of Item 1A paragraphs new or changed since the prior year |
+| `worked_example` | One company's six criteria and their percentile beside quoted 10-K passages |
+
+The worked example is chosen by hand (`WORKED_EXAMPLE` in
+`data/worked_example.py`) from the years before the test years: Caesars
+Entertainment, fiscal 2014, whose auditor doubted it could continue as a going
+concern. Its passages are read from EDGAR-CORPUS during `make all` and kept in
+`data/processed/worked_example`, so `make figures` needs no raw data.
 
 ## Layout
 
@@ -150,7 +174,8 @@ src/ai_mcdm_invest/
   config.py      raw-data and derived-data locations
   pipeline.py    the rebuild command: runs every stage in order
   tables.py      writes a table as Parquet plus CSV
-  data/          clean panel, company links, joined panel, filings table
+  data/          clean panel, company links, joined panel, filings table,
+                 worked-example passages
   figures/       report figures drawn from the tables
   criteria/      ratio criteria
   ml/            ML risk score

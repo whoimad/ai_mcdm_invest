@@ -18,12 +18,17 @@ from ai_mcdm_invest.data.links import link_companies, load_ticker_ciks, load_xbr
 from ai_mcdm_invest.data.panel import clean_panel, load_raw_panel
 from ai_mcdm_invest.data.raw_manifest import load_manifest, verify_raw_files
 from ai_mcdm_invest.data.submissions import load_submissions
-from ai_mcdm_invest.figures.storyline import storyline_figures, write_figures
+from ai_mcdm_invest.data.worked_example import WORKED_EXAMPLE, worked_example_passages
+from ai_mcdm_invest.figures.common import write_figures
+from ai_mcdm_invest.figures.draw import report_figures
 from ai_mcdm_invest.tables import write_table
 
 
-def run(settings: Settings) -> None:
+def run(settings: Settings, worked_example: tuple[str, int] = WORKED_EXAMPLE) -> None:
     """Rebuild every derived table and figure under `settings.data_dir`.
+
+    `worked_example` is the ticker and fiscal year whose 10-K passages the
+    report quotes beside its fundamentals.
 
     Stops before writing anything if the raw files differ from the manifest,
     and before the joined panel if the join report shows too low a coverage.
@@ -67,8 +72,13 @@ def run(settings: Settings) -> None:
     print(f"filings table: {len(filings)} rows, written to {path}")
     print(_filing_counts(filings).to_string())
 
-    path = write_figures(storyline_figures(clean, links, joined, filings), settings.figures_dir)
-    print(f"storyline figures: written to {path.parent}")
+    passages = worked_example_passages(filings, settings.raw_corpus_dir, *worked_example)
+    path = write_table(passages, settings.processed_dir, "worked_example")
+    print(f"worked example: {len(passages)} passages, written to {path}")
+
+    figures = report_figures(clean, links, joined, filings, passages)
+    path = write_figures(figures, settings.figures_dir)
+    print(f"figures: {len(figures)} written to {path.parent}")
 
 
 def _link_counts(links: pd.DataFrame, clean: pd.DataFrame) -> pd.DataFrame:

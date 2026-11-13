@@ -7,7 +7,7 @@ all:
 
 # Redraw the figures from the tables `make all` wrote, without rebuilding them.
 figures:
-	uv run python -m ai_mcdm_invest.figures.storyline
+	uv run python -m ai_mcdm_invest.figures.draw
 
 # Download the raw files the rebuild reads besides the panel: SEC ticker list,
 # XBRL frames and bulk submissions into AI_MCDM_RAW_DIR/sec, EDGAR-CORPUS into
