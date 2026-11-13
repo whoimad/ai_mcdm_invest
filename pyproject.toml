@@ -24,6 +24,8 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not slow'"
+markers = ["slow: needs the real raw data; kept out of CI (run with `make test-slow`)"]
 
 [tool.ruff]
 line-length = 100

@@ -1,4 +1,4 @@
-.PHONY: all fetch manifest test lint check
+.PHONY: all fetch manifest test test-slow lint check
 
 # Rebuild every derived table from raw data.
 # Raw data is read from AI_MCDM_RAW_DIR (default: ~/maids/data).
@@ -18,6 +18,11 @@ manifest:
 
 test:
 	uv run pytest
+
+# Acceptance checks on the real raw data (fiscal 2017 join coverage). Slow and
+# kept out of CI; needs AI_MCDM_RAW_DIR to hold the raw data.
+test-slow:
+	uv run pytest -m slow
 
 lint:
 	uv run ruff check .

@@ -4,13 +4,14 @@ import pandas as pd
 
 from ai_mcdm_invest.data.panel import clean_panel
 
-# The five lowest returns among each year's 25 fixture companies.
+# The five lowest returns among each year's 25 fixture companies; in 2018 the
+# 27 rows (LIMA's preferred LIMAP at -30% among them) give six.
 TAIL_LOSERS = {
     2014: {"ALFA", "BRVO", "CHRL", "DLTA", "ECHO"},
     2015: {"FXTR", "GOLF", "HOTL", "INDG", "JULT"},
     2016: {"KILO", "LIMA", "MIKE", "NOVM", "OSCR"},
     2017: {"PAPA", "QUBC", "ROMO", "SIER", "TNGO"},
-    2018: {"UNFM", "VCTR", "WSKY", "XRAY", "YANK"},
+    2018: {"UNFM", "VCTR", "WSKY", "XRAY", "YANK", "LIMAP"},
 }
 
 

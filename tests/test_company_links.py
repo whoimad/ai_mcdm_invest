@@ -89,9 +89,9 @@ def test_every_panel_row_gets_exactly_one_link_row(
     clean_fixture_panel: pd.DataFrame, fixture_links: pd.DataFrame
 ) -> None:
     assert fixture_links.index.is_unique
-    assert len(fixture_links) == len(clean_fixture_panel) == 125
+    assert len(fixture_links) == len(clean_fixture_panel) == 127
     assert fixture_links["link_method"].value_counts().to_dict() == {
-        "figure_match": 20 * 5,  # 25 core companies minus the five below
+        "figure_match": 20 * 5 + 2,  # 25 core companies minus the five below, plus LIMAK, LIMAP
         "unlinked": 3 * 5,  # CHRL, DLTA, HOTL
         "ticker": 2 * 5,  # FXTR, GOLF
     }

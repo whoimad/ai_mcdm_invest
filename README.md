@@ -21,6 +21,7 @@ uv sync
 | `make manifest` | Records the raw files the study is built on in `raw_manifest.json` (only to adopt new raw data on purpose) |
 | `make all` | Checks the raw files against `raw_manifest.json`, then rebuilds every derived table, offline |
 | `make test` | Runs the test suite (needs neither the raw data nor a GPU) |
+| `make test-slow` | Runs the acceptance checks on the real raw data (fiscal 2017 join coverage); kept out of CI |
 | `make lint` | Runs the linter, the format check and the type checker |
 | `make check` | `lint` and `test` together; what CI runs |
 
@@ -54,12 +55,15 @@ AI_MCDM_RAW_DIR=tests/fixtures/raw AI_MCDM_MANIFEST=tests/fixtures/raw_manifest.
 ```
 
 Derived tables are written under `data/` (ignored by git), each as Parquet
-plus a CSV copy to open by hand. `AI_MCDM_DATA_DIR` overrides the location.
+plus a CSV copy to open by hand, and reports as Markdown under `data/reports/`.
+`AI_MCDM_DATA_DIR` overrides the location.
 
 | Table | Contents |
 |---|---|
 | `data/interim/kaggle_clean` | Clean panel: one row per ticker and fiscal year (2014–2018), 221 fundamentals, `sector`, `next_year_return` (%) and `tail_loss` |
 | `data/interim/company_links` | Each clean-panel row's SEC filer: `cik`, `link_method` (`figure_match`, `ticker`, `unlinked`), `figure_match` (`matched`, `ambiguous`, `none`), the CIK each method found, and the match evidence (filer name, period end, which figures matched) |
+| `data/processed/panel` | Joined panel: one row per SEC filer (`cik`) and fiscal year, with the kept row's `ticker` and `link_method`, `sector`, the 221 fundamentals, `next_year_return` and `tail_loss` |
+| `data/reports/join_report.md` | Companies and tail losers kept and lost at each join step per year, the fiscal 2017 coverage, and 20 random figure-match recoveries to check by eye |
 
 `tail_loss` marks the worst 20% of next-year returns within each fiscal year.
 Rows whose next-year return is missing, above +1000% or at most -100% are
@@ -72,6 +76,20 @@ Today's ticker list is used only when the figures find no filer; where both
 find one and they differ, the figures win (the ticker was usually reused by a
 later company). A match to several filers is rejected as `ambiguous`; the
 row then keeps its ticker link only if that filer is one of those matched.
+
+The joined panel leaves out unlinked rows and keeps one row per filer and
+year. Several rows share a filer when the panel lists a company's other share
+classes, preferred shares or notes with the company's own figures, or when a
+reused ticker points at a filer another row's figures matched. The kept row is
+the first of: rows with a market cap (preferred shares and notes have none),
+rows linked by figures, the largest market cap, the shortest ticker. The
+panel records no security type, so a preferred share or note that is its
+filer's only row in a year cannot be told apart and stays in (CHS Inc., listed
+only through its preferred shares, is one).
+
+The build stops before writing the joined panel if fiscal 2017 links fewer
+than 85% of companies or 88% of tail losers (the prototype linked 87.6% and
+90.6%); the join report is written first, to show where the join fell short.
 
 ## Layout
 

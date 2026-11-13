@@ -2,7 +2,8 @@
 
 Stages never build these paths themselves; they receive tables. Only the entry
 points read `Settings`: the rebuild (`pipeline.py`), the SEC download
-(`data/sec_download.py`) and the manifest recorder (`data/raw_manifest.py`).
+(`data/sec_download.py`), the manifest recorder (`data/raw_manifest.py`) and
+the slow acceptance tests on real data.
 """
 
 import os
@@ -62,3 +63,11 @@ class Settings:
     @property
     def interim_dir(self) -> Path:
         return self.data_dir / "interim"
+
+    @property
+    def processed_dir(self) -> Path:
+        return self.data_dir / "processed"
+
+    @property
+    def reports_dir(self) -> Path:
+        return self.data_dir / "reports"

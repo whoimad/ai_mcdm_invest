@@ -11,7 +11,14 @@ def test_one_row_per_ticker_and_fiscal_year(raw_panel: pd.DataFrame) -> None:
 
     assert not clean.duplicated(["ticker", "fiscal_year"]).any()
     assert sorted(clean["fiscal_year"].unique()) == [2014, 2015, 2016, 2017, 2018]
-    assert (clean.groupby("fiscal_year")["ticker"].nunique() == 25).all()
+    # 25 core companies, plus LIMA's two other securities in 2018.
+    assert clean.groupby("fiscal_year")["ticker"].nunique().to_dict() == {
+        2014: 25,
+        2015: 25,
+        2016: 25,
+        2017: 25,
+        2018: 27,
+    }
 
 
 def test_rows_that_cannot_be_labelled_are_dropped(raw_panel: pd.DataFrame) -> None:
@@ -22,7 +29,7 @@ def test_rows_that_cannot_be_labelled_are_dropped(raw_panel: pd.DataFrame) -> No
 
     # ZULU: +2500% (data error). ZZNR: no return. ZZWO: -100%.
     assert not {"ZULU", "ZZNR", "ZZWO"} & set(clean["ticker"])
-    assert len(clean) == 125
+    assert len(clean) == 127
 
 
 def test_keeps_fundamentals_sector_and_return(raw_panel: pd.DataFrame) -> None:

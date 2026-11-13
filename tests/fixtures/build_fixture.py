@@ -18,6 +18,11 @@ Design (the "known answers" tests rely on):
 - Three extra rows must be dropped by cleaning: ZULU (2014, +2500%, a data
   error), ZZNR (2016, no return) and ZZWO (2017, -100%).
 - ECHO reports no revenue in 2014 (a missing fundamental that must be kept).
+- LIMA has two more securities in fiscal 2018, reporting LIMA's own figures:
+  LIMAK, a second share class with twice LIMA's market cap, and LIMAP, a
+  preferred share with no market cap. All three match LIMA's filer, and the
+  joined panel must keep LIMAK alone. LIMAP's -30% makes it a sixth tail
+  loser in 2018 (27 rows), one the deduplication drops.
 
 SEC files (`raw/sec/`), for the company-link stage. Core company number i
 files under CIK 1000 + i, and XBRL frames report its exact figures, except:
@@ -69,6 +74,10 @@ EXTRA = {
     2016: [("ZZNR", None)],
     2017: [("ZZWO", -100.0)],
 }
+# Other securities of a core company: (ticker, issuer, market cap multiple, return).
+SHARE_CLASSES = {
+    2018: [("LIMAK", "LIMA", 2.0, 40.0), ("LIMAP", "LIMA", None, -30.0)],
+}
 HEADER = "Revenue,Net Income,Total assets,Total debt,Market Cap,Sector"
 
 
@@ -103,6 +112,11 @@ def rows(year: int) -> list[str]:
         ret_cell = "" if ret is None else f"{ret}"
         label = "" if ret is None else str(int(ret > 0))
         out.append(",".join([ticker, *cells, SECTORS[i % 5], ret_cell, label]))
+    for ticker, issuer, cap_multiple, ret in SHARE_CLASSES.get(year, []):
+        i = CORE.index(issuer)
+        cells = [f"{v:.1f}" for v in figures(i, year)]
+        cells[4] = "" if cap_multiple is None else f"{figures(i, year)[4] * cap_multiple:.1f}"
+        out.append(",".join([ticker, *cells, SECTORS[i % 5], f"{ret}", str(int(ret > 0))]))
     return out
 
 
