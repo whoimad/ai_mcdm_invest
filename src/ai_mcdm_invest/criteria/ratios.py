@@ -7,9 +7,10 @@ import pandas as pd
 
 from ai_mcdm_invest.data.panel import TEST_YEARS
 
-# Direction rule (decision 4.3), on a criterion's training tail-loss AUC.
-FLIP_AT_MOST = 0.45
-KEEP_AT_LEAST = 0.55
+# Direction rule (decision 4.3, revised 16 November): a criterion is used the
+# way, textbook or flipped, with the higher training tail-loss AUC, if that
+# AUC reaches this value; otherwise it is dropped.
+MIN_AUC = 0.55
 
 Direction = Literal["keep", "flip", "drop"]
 
@@ -53,40 +54,48 @@ WORST = {NEGATIVE_EARNINGS, NEGATIVE_EQUITY}
 BEST = {NO_INTEREST_EXPENSE}
 
 
-def direction(auc: float) -> Direction:
+def direction(textbook_auc: float, flipped_auc: float) -> Direction:
     """Keep a criterion that separates tail losers the textbook way, flip one that
-    clearly points the other way, drop one with no signal."""
-    if auc <= FLIP_AT_MOST:
-        return "flip"
-    if auc >= KEEP_AT_LEAST:
-        return "keep"
-    return "drop"
+    does so better the other way, drop one that does neither.
+
+    The two AUCs do not add up to one: odd values stay worst or best both ways.
+    A tie goes to the textbook way.
+    """
+    if max(textbook_auc, flipped_auc) < MIN_AUC:
+        return "drop"
+    return "keep" if textbook_auc >= flipped_auc else "flip"
 
 
 def learn_directions(joined: pd.DataFrame) -> pd.DataFrame:
     """Each criterion's direction, learned on the training years (those before the
-    test years) from its tail-loss AUC.
+    test years) from its tail-loss AUC taken both ways.
 
-    The AUC is that of the textbook score, odd values included, among rows that
-    report the ratio: the chance that a company avoiding a tail loss scores
-    higher than one suffering it (ties count half). Above 0.5, the textbook
-    direction is right.
+    Each AUC is that of the score, textbook or flipped, with odd values worst or
+    best either way, among rows that do not lack the ratio: the chance that a
+    company avoiding a tail loss scores higher than one suffering it (ties count
+    half).
     """
     training = joined[joined["fiscal_year"] < TEST_YEARS.start]
     rows = []
     for criterion in CRITERIA:
         status = ratio_status(training, criterion)
-        score = _percentile(training, criterion, status, flip=False)
         counted = status != NOT_REPORTED
-        auc = tail_loss_auc(score[counted], training.loc[counted, "tail_loss"])
+        textbook_auc, flipped_auc = (
+            tail_loss_auc(
+                _percentile(training, criterion, status, flip=flip)[counted],
+                training.loc[counted, "tail_loss"],
+            )
+            for flip in (False, True)
+        )
         rows.append(
             {
                 "criterion": criterion.name,
                 "column": criterion.column,
                 "group": criterion.group,
                 "higher_is_better": criterion.higher_is_better,
-                "training_auc": auc,
-                "direction": direction(auc),
+                "training_auc": textbook_auc,
+                "flipped_training_auc": flipped_auc,
+                "direction": direction(textbook_auc, flipped_auc),
             }
         )
     return pd.DataFrame(rows)

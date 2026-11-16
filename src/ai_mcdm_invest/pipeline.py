@@ -73,7 +73,11 @@ def run(settings: Settings) -> None:
     directions = learn_directions(joined)
     path = write_table(directions, settings.processed_dir, "criterion_directions")
     print(f"criterion directions: written to {path}")
-    print(directions[["criterion", "training_auc", "direction"]].to_string(index=False))
+    print(
+        directions[["criterion", "training_auc", "flipped_training_auc", "direction"]].to_string(
+            index=False
+        )
+    )
     criteria = score_ratios(joined, directions)
     path = write_table(criteria, settings.processed_dir, "ratio_criteria")
     print(f"ratio criteria: {len(criteria)} rows, written to {path}")

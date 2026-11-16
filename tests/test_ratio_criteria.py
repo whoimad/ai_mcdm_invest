@@ -44,21 +44,27 @@ def scores(table: pd.DataFrame, criterion: str) -> list[float]:
 
 
 @pytest.mark.parametrize(
-    ("auc", "expected"),
+    ("textbook_auc", "flipped_auc", "expected"),
     [
-        (0.20, "flip"),
-        (0.45, "flip"),
-        (0.4501, "drop"),
-        (0.50, "drop"),
-        (0.5499, "drop"),
-        (0.55, "keep"),
-        (0.80, "keep"),
+        (0.80, 0.20, "keep"),
+        (0.55, 0.45, "keep"),
+        (0.5499, 0.4501, "drop"),
+        (0.45, 0.55, "flip"),
+        (0.20, 0.80, "flip"),
+        # Negative equity scored worst both ways: the textbook AUC is not low
+        # enough to say "flip", but the flipped one is high.
+        (0.454, 0.592, "flip"),
+        # The textbook way is poor, and so is the flipped way.
+        (0.40, 0.5499, "drop"),
+        # Both ways pass (the signal comes from odd values): the better wins.
+        (0.676, 0.661, "keep"),
+        (0.60, 0.60, "keep"),
     ],
 )
-def test_direction_flips_at_or_below_045_and_keeps_at_or_above_055(
-    auc: float, expected: str
+def test_direction_takes_the_better_way_if_it_reaches_055_and_drops_otherwise(
+    textbook_auc: float, flipped_auc: float, expected: str
 ) -> None:
-    assert direction(auc) == expected
+    assert direction(textbook_auc, flipped_auc) == expected
 
 
 def test_scores_are_within_year_percentiles_with_higher_better() -> None:
@@ -196,6 +202,26 @@ def test_directions_are_learned_on_training_years_only() -> None:
     assert directions["debt_equity"] == (0.0, "flip")
     assert directions["current_ratio"] == (0.5, "drop")
     assert directions["net_margin"] == (0.5, "drop")  # the same for everyone
+
+
+def test_leverage_flips_when_negative_equity_is_risky_but_more_debt_is_safer() -> None:
+    # The leverage pattern in the data: negative equity is the riskiest, but
+    # among the others the least indebted fare worst. Taken the textbook way,
+    # the two cancel out; flipped with negative equity still worst, they agree.
+    joined = panel(
+        {"fiscal_year": 2016, "tail_loss": True, "debtEquityRatio": -2.0,
+         "Total shareholders equity": -10.0},
+        {"fiscal_year": 2016, "tail_loss": True, "debtEquityRatio": 0.1},
+        {"fiscal_year": 2016, "debtEquityRatio": 0.2},
+        {"fiscal_year": 2016, "debtEquityRatio": 2.0},
+        {"fiscal_year": 2016, "debtEquityRatio": 3.0},
+    )  # fmt: skip
+
+    directions = learn_directions(joined).set_index("criterion")
+
+    assert directions.loc["debt_equity", "training_auc"] == 0.5
+    assert directions.loc["debt_equity", "flipped_training_auc"] == 1.0
+    assert directions.loc["debt_equity", "direction"] == "flip"
 
 
 def test_a_missing_ratio_does_not_count_towards_the_training_auc() -> None:

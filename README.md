@@ -74,7 +74,7 @@ plus a CSV copy to open by hand, and reports as Markdown under `data/reports/`.
 | `data/interim/company_links` | Each clean-panel row's SEC filer: `cik`, `link_method` (`figure_match`, `ticker`, `unlinked`), `figure_match` (`matched`, `ambiguous`, `none`), the CIK each method found, and the match evidence (filer name, period end, which figures matched) |
 | `data/processed/panel` | Joined panel: one row per SEC filer (`cik`) and fiscal year, with the kept row's `ticker` and `link_method`, `sector`, the 221 fundamentals, `next_year_return` and `tail_loss` |
 | `data/processed/filings` | Filings table: one row per joined-panel row, describing the 10-K for its period (see below) |
-| `data/processed/criterion_directions` | Each ratio criterion's `group`, textbook direction, `training_auc` and learned `direction` (`keep`, `flip`, `drop`) |
+| `data/processed/criterion_directions` | Each ratio criterion's `group`, textbook direction, `training_auc` and `flipped_training_auc`, and learned `direction` (`keep`, `flip`, `drop`) |
 | `data/processed/ratio_criteria` | Ratio criteria: one row per joined-panel row, each criterion's `<name>_score`, `<name>_sector_score` and `<name>_status`, with `ratios_not_reported` and `too_few_ratios` (see below) |
 | `data/processed/worked_example` | The 10-K passages the worked-example figure quotes: `ticker`, `cik`, `fiscal_year`, `item`, `passage` |
 | `data/reports/join_report.md` | Companies and tail losers kept and lost at each join step per year, the fiscal 2017 coverage, and 20 random figure-match recoveries to check by eye |
@@ -163,11 +163,15 @@ with more than three of the six ratios not reported is marked
 year, with their tail losers.
 
 Each criterion's direction is learned on the training years (fiscal
-2014–2016) from its tail-loss AUC: the chance that a company avoiding a
-tail loss scores higher, in the textbook direction, than a tail loser (ties
-count half; rows with the ratio not reported are left out). At or below 0.45
-the criterion is flipped, at or above 0.55 it is kept, and in between it is
-dropped and gets no score.
+2014–2016) from its tail-loss AUC: the chance that a company avoiding a tail
+loss scores higher than a tail loser (ties count half; rows with the ratio not
+reported are left out). The AUC is taken twice, with the textbook direction
+(`training_auc`) and flipped (`flipped_training_auc`), odd values staying worst
+or best both ways. The criterion is used the way with the higher AUC if that
+AUC is at least 0.55, and dropped (no score) otherwise. Leverage is why both
+ways are tried: negative equity is the riskiest, but among the other companies
+more debt goes with fewer tail losses (the `leverage_tail_loss` figure).
+Taken one way only, the two cancel out and debt-to-equity would be dropped.
 
 ## Figures
 
