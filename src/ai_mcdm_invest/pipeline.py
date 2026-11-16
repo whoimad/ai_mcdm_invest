@@ -23,6 +23,7 @@ from ai_mcdm_invest.data.worked_example import worked_example_passages
 from ai_mcdm_invest.evaluation.ablation import ablation_table, baselines, evaluation_universe
 from ai_mcdm_invest.figures.common import write_figures
 from ai_mcdm_invest.figures.draw import report_figures
+from ai_mcdm_invest.ml.risk_score import ml_auc_by_year, ml_risk_criterion, ml_risk_scores
 from ai_mcdm_invest.tables import write_table
 
 
@@ -84,10 +85,19 @@ def run(settings: Settings) -> None:
     print(f"ratio criteria: {len(criteria)} rows, written to {path}")
     print(_too_few_ratios(criteria, joined).to_string())
 
+    risk = ml_risk_scores(clean)
+    path = write_table(risk, settings.processed_dir, "ml_risk")
+    print(f"ML risk score: {len(risk)} rows, written to {path}")
+    print("  exploratory: target and model family were chosen while looking at the test years")
+    print(ml_auc_by_year(risk, clean).to_string())
+    ml_criterion = ml_risk_criterion(risk, joined)
+    path = write_table(ml_criterion, settings.processed_dir, "ml_criterion")
+    print(f"ML criterion: {len(ml_criterion)} rows, written to {path}")
+
     baseline_table = baselines(joined)
     path = write_table(baseline_table, settings.processed_dir, "baselines")
     print(f"baselines: written to {path}")
-    universe = evaluation_universe(joined, criteria, filings, baseline_table)
+    universe = evaluation_universe(joined, criteria, filings, baseline_table, ml_criterion)
     print(_universe_counts(universe).to_string())
     ablation = ablation_table(universe, directions)
     path = write_table(ablation, settings.processed_dir, "ablation")
@@ -143,6 +153,7 @@ def _ablation_summary(ablation: pd.DataFrame) -> pd.DataFrame:
     columns = [
         "layer",
         "profile",
+        "exploratory",
         "companies",
         "tail_loss_auc",
         "riskiest_fifth_tail_share",

@@ -108,11 +108,13 @@ ROE_ONLY = pd.DataFrame(
 
 def universe() -> pd.DataFrame:
     """Two test years of the ten companies, ranked by return on equity alone,
-    bigger the safer, and with last year's price move pointing the wrong way."""
+    bigger the safer, and with last year's price move pointing the wrong way.
+    The ML risk score puts the two tail losers at the bottom."""
     years = pd.concat([one_year(2017), one_year(2018)], ignore_index=True)
     return years.assign(
         cik=range(len(years)),
         roe_score=years["score"] / 10,
+        ml_risk_score=(~years["tail_loss"]).astype(float),
         market_cap=years["score"] * 1e9,
         last_year_return=-years["score"],
     ).drop(columns="score")
@@ -128,6 +130,18 @@ def test_the_ablation_table_has_a_ratios_only_row_per_profile_method_and_test_ye
     assert set(ratios["fiscal_year"]) == {"2017", "2018", "pooled"}
     # One criterion: every profile and method ranks as it does.
     assert ratios["tail_loss_auc"].tolist() == pytest.approx([15 / 16] * len(ratios))
+
+
+def test_the_ml_row_adds_the_ml_risk_score_to_the_ratios_and_is_labelled_exploratory() -> None:
+    table = ablation_table(universe(), ROE_ONLY)
+
+    ml = table[table["layer"] == "+ ML"]
+    assert len(ml) == 3 * 2 * 3
+    # The ML score puts both tail losers below everyone else, and return on
+    # equity cannot lift them out under any profile (worked by hand).
+    assert ml["tail_loss_auc"].tolist() == pytest.approx([1.0] * len(ml))
+    assert ml["exploratory"].all()
+    assert not table.loc[table["layer"] != "+ ML", "exploratory"].any()
 
 
 def test_the_baselines_are_ranked_beside_the_layers_without_a_profile() -> None:
@@ -169,11 +183,14 @@ def test_the_universe_is_test_year_companies_with_a_10k_text_and_enough_ratios()
     )
     filings = keys.assign(in_corpus=[True, False, True, True, True])
     rows = baselines(joined.assign(**{"Market Cap": 1e9}))
+    # The ML model scores test years only.
+    ml = keys[keys["fiscal_year"] >= 2017].assign(ml_risk_score=[0.2, 0.8, 0.6, 0.4])
 
-    table = evaluation_universe(joined, criteria, filings, rows)
+    table = evaluation_universe(joined, criteria, filings, rows, ml)
 
     # B has no 10-K text, C too few ratios, and A's fiscal 2016 is a training year.
     assert table["ticker"].tolist() == ["A", "D"]
     assert table["roe_score"].tolist() == [0.9, 0.4]
+    assert table["ml_risk_score"].tolist() == [0.2, 0.4]
     assert table["last_year_return"].tolist()[0] == 4.0
     assert {"next_year_return", "tail_loss", "market_cap"} <= set(table.columns)

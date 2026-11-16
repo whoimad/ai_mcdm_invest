@@ -30,7 +30,7 @@ manifest:
 test:
 	uv run pytest
 
-# Acceptance checks on the real raw data (fiscal 2017 join and 10-K coverage). Slow and
+# Acceptance checks on the real raw data (fiscal 2017 join, 10-K coverage, ML AUC). Slow and
 # kept out of CI; needs AI_MCDM_RAW_DIR to hold the raw data.
 test-slow:
 	uv run pytest -m slow

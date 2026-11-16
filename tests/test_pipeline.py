@@ -141,7 +141,26 @@ def test_rebuild_writes_the_ratio_criteria_and_their_directions(
     assert (tmp_path / "processed" / "ratio_criteria.csv").exists()
 
 
-def test_rebuild_writes_the_ablation_table_with_its_ratios_only_rows(
+def test_rebuild_writes_the_ml_risk_score_for_every_test_year_company(
+    fixture_raw_dir: Path, tmp_path: Path
+) -> None:
+    run(fixture_settings(fixture_raw_dir, tmp_path))
+
+    risk = pd.read_parquet(tmp_path / "processed" / "ml_risk.parquet")
+    clean = pd.read_parquet(tmp_path / "interim" / "kaggle_clean.parquet")
+    panel = pd.read_parquet(tmp_path / "processed" / "panel.parquet")
+    # Trained and scored on the full clean panel, linked to a filer or not.
+    test_years = clean[clean["fiscal_year"] >= 2017]
+    assert len(risk) == len(test_years)
+    assert set(risk["ticker"]) == set(test_years["ticker"])
+    assert risk["feature_5"].notna().all()
+    # The criterion: one row per joined-panel row in the test years.
+    criterion = pd.read_parquet(tmp_path / "processed" / "ml_criterion.parquet")
+    assert len(criterion) == (panel["fiscal_year"] >= 2017).sum()
+    assert criterion["ml_risk_score"].between(0, 1).all()
+
+
+def test_rebuild_writes_the_ablation_table_with_its_ratios_only_and_ml_rows(
     fixture_raw_dir: Path, tmp_path: Path
 ) -> None:
     run(fixture_settings(fixture_raw_dir, tmp_path))
@@ -151,6 +170,7 @@ def test_rebuild_writes_the_ablation_table_with_its_ratios_only_rows(
     assert len(ratios) == 3 * 2 * 3  # profiles, SAW and TOPSIS, 2017, 2018 and pooled
     assert set(ablation["layer"]) == {
         "ratios only",
+        "+ ML",
         "size baseline",
         "last year's price move baseline",
     }

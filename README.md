@@ -27,7 +27,7 @@ uv sync
 | `make figures` | Redraws the figures from the tables `make all` wrote, without rebuilding them |
 | `make notebook` | Reruns the data notebook from those tables and figures and saves its outputs; kept out of CI |
 | `make test` | Runs the test suite (needs neither the raw data nor a GPU) |
-| `make test-slow` | Runs the acceptance checks on the real raw data (fiscal 2017 join and 10-K coverage); kept out of CI |
+| `make test-slow` | Runs the acceptance checks on the real raw data (fiscal 2017 join, 10-K coverage, the ML model's AUC); kept out of CI |
 | `make lint` | Runs the linter, the format check and the type checker |
 | `make check` | `lint` and `test` together; what CI runs |
 
@@ -76,8 +76,10 @@ plus a CSV copy to open by hand, and reports as Markdown under `data/reports/`.
 | `data/processed/filings` | Filings table: one row per joined-panel row, describing the 10-K for its period (see below) |
 | `data/processed/criterion_directions` | Each ratio criterion's `group`, textbook direction, `training_auc` and `flipped_training_auc`, and learned `direction` (`keep`, `flip`, `drop`) |
 | `data/processed/ratio_criteria` | Ratio criteria: one row per joined-panel row, each criterion's `<name>_score`, `<name>_sector_score` and `<name>_status`, with `ratios_not_reported` and `too_few_ratios` (see below) |
+| `data/processed/ml_risk` | ML risk score: one row per clean-panel row in the test years (`ticker`, `fiscal_year`), with `tail_loss_probability` and the five largest feature contributions, `feature_1`–`feature_5` and `contribution_1`–`contribution_5` (see below) |
+| `data/processed/ml_criterion` | The ML risk criterion: one row per joined-panel row in the test years, with `tail_loss_probability` and `ml_risk_score` |
 | `data/processed/baselines` | Size (`market_cap`) and last year's price move (`last_year_return`, %) for each joined-panel row, kept outside MCDM |
-| `data/processed/ablation` | The layer ablation: one row per `layer`, `profile`, `method` and `fiscal_year` (2017, 2018, `pooled`), plus the baselines, with `companies`, `tail_losers` and the four measures (see below) |
+| `data/processed/ablation` | The layer ablation: one row per `layer`, `profile`, `method` and `fiscal_year` (2017, 2018, `pooled`), plus the baselines, with `exploratory`, `companies`, `tail_losers` and the four measures (see below) |
 | `data/processed/worked_example` | The 10-K passages the worked-example figure quotes: `ticker`, `cik`, `fiscal_year`, `item`, `passage` |
 | `data/reports/join_report.md` | Companies and tail losers kept and lost at each join step per year, the fiscal 2017 coverage, and 20 random figure-match recoveries to check by eye |
 
@@ -175,6 +177,33 @@ ways are tried: negative equity is the riskiest, but among the other companies
 more debt goes with fewer tail losses (the `leverage_tail_loss` figure).
 Taken one way only, the two cancel out and debt-to-equity would be dropped.
 
+## ML risk score
+
+The ML layer is one criterion: the probability that a company lands in its
+year's worst 20% of next-year returns (a tail loss). It comes from
+gradient-boosted trees (XGBoost) on the 221 fundamentals, with the
+prototype's settings, never tuned: 400 trees, depth 4, learning rate 0.03,
+row subsample 0.8, column subsample 0.5, minimum child weight 10, histogram
+splits, seed 0. Unlike the prototype, the fundamentals go in as they are: no
+added features, no columns dropped for missing values, no capping of extreme
+values; missing values are left to the trees.
+
+The model is trained walk-forward on the full clean panel, linked to a 10-K
+or not: on fiscal 2015–2016 to score 2017, and on 2015–2017 to score 2018. Its
+out-of-time tail-loss AUC is 0.810 (2017) and 0.792 (2018); the prototype,
+which also fed it sector and last year's price move, scored 0.813 and 0.796.
+`make test-slow` checks the rewrite stays within 0.01 of 0.81 and 0.80.
+
+`ml_risk_score` is the probability's percentile within the fiscal year over
+the joined panel, as the ratio scores are, oriented so that higher is safer.
+Each company keeps the five features whose contributions to its score are
+largest in size, from XGBoost's own contribution output (SHAP values, in
+log-odds of a tail loss; positive raises the risk).
+
+**The ML results are exploratory.** The settings were never tuned on the test
+years, but the target and the model family were chosen while looking at them.
+The ablation's `exploratory` column marks every row that includes the ML layer.
+
 ## Ranking and the ablation
 
 The ranker is the weighted sum (SAW): each company's weighted mean of its
@@ -211,7 +240,7 @@ returns ranked within each year first:
 | `rank_correlation` | Rank correlation of the score with the next-year return |
 | `top_minus_bottom_return` | Mean next-year return of the safest fifth minus the riskiest, in percentage points |
 
-So far the ablation has its `ratios only` rows; the ML and text layers add theirs.
+So far the ablation has its `ratios only` and `+ ML` rows; the text layer adds its own.
 
 ## Figures
 
