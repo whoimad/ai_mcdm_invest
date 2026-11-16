@@ -194,6 +194,17 @@ out-of-time tail-loss AUC is 0.810 (2017) and 0.792 (2018); the prototype,
 which also fed it sector and last year's price move, scored 0.813 and 0.796.
 `make test-slow` checks the rewrite stays within 0.01 of 0.81 and 0.80.
 
+First result of adding the ML layer (exploratory; pooled 2017–2018, SAW,
+6,700 companies):
+
+| Profile | Tail-loss AUC, ratios only | Tail-loss AUC, + ML | Tail losers in the safest fifth, ratios only → + ML |
+|---|---|---|---|
+| Balanced | 0.707 | 0.750 | 10.0% → 4.6% |
+| Risk-averse | 0.709 | 0.778 | 7.9% → 2.0% |
+| Value-minded | 0.700 | 0.740 | 11.8% → 7.0% |
+
+The baselines score 0.706 (size) and 0.621 (last year's price move).
+
 `ml_risk_score` is the probability's percentile within the fiscal year over
 the joined panel, as the ratio scores are, oriented so that higher is safer.
 Each company keeps the five features whose contributions to its score are
