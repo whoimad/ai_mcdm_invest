@@ -125,6 +125,22 @@ def test_rebuild_writes_the_worked_example_passages(fixture_raw_dir: Path, tmp_p
     assert set(passages["ticker"]) == {"ROMO"}
 
 
+def test_rebuild_writes_the_ratio_criteria_and_their_directions(
+    fixture_raw_dir: Path, tmp_path: Path
+) -> None:
+    run(fixture_settings(fixture_raw_dir, tmp_path))
+
+    criteria = pd.read_parquet(tmp_path / "processed" / "ratio_criteria.parquet")
+    panel = pd.read_parquet(tmp_path / "processed" / "panel.parquet")
+    assert len(criteria) == len(panel)
+    alfa = criteria[criteria["ticker"] == "ALFA"]
+    assert set(alfa["debt_equity_status"]) == {"negative equity"}  # ALFA's equity is negative
+    directions = pd.read_parquet(tmp_path / "processed" / "criterion_directions.parquet")
+    assert len(directions) == 6
+    assert set(directions["direction"]) <= {"keep", "flip", "drop"}
+    assert (tmp_path / "processed" / "ratio_criteria.csv").exists()
+
+
 STORYLINE_FIGURES = ["join_funnel", "leverage_tail_loss", "section_lengths", "going_concern_items"]
 EXPLORATORY_FIGURES = [
     "companies_per_sector",

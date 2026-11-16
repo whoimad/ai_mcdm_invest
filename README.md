@@ -74,6 +74,8 @@ plus a CSV copy to open by hand, and reports as Markdown under `data/reports/`.
 | `data/interim/company_links` | Each clean-panel row's SEC filer: `cik`, `link_method` (`figure_match`, `ticker`, `unlinked`), `figure_match` (`matched`, `ambiguous`, `none`), the CIK each method found, and the match evidence (filer name, period end, which figures matched) |
 | `data/processed/panel` | Joined panel: one row per SEC filer (`cik`) and fiscal year, with the kept row's `ticker` and `link_method`, `sector`, the 221 fundamentals, `next_year_return` and `tail_loss` |
 | `data/processed/filings` | Filings table: one row per joined-panel row, describing the 10-K for its period (see below) |
+| `data/processed/criterion_directions` | Each ratio criterion's `group`, textbook direction, `training_auc` and learned `direction` (`keep`, `flip`, `drop`) |
+| `data/processed/ratio_criteria` | Ratio criteria: one row per joined-panel row, each criterion's `<name>_score`, `<name>_sector_score` and `<name>_status`, with `ratios_not_reported` and `too_few_ratios` (see below) |
 | `data/processed/worked_example` | The 10-K passages the worked-example figure quotes: `ticker`, `cik`, `fiscal_year`, `item`, `passage` |
 | `data/reports/join_report.md` | Companies and tail losers kept and lost at each join step per year, the fiscal 2017 coverage, and 20 random figure-match recoveries to check by eye |
 
@@ -133,6 +135,40 @@ is the share of this year's Item 1A paragraphs of which fewer than half the
 sentences appear word for word in the prior year's Item 1A; it is empty when
 either year has no Item 1A.
 
+## Ratio criteria
+
+The classic MCDM layer is six textbook ratios in three groups: profitability
+(`roe`, return on equity; `net_margin`), valuation (`pe`, price-to-earnings)
+and balance sheet (`debt_equity`, `current_ratio`, `interest_coverage`). Each
+is scored as its percentile within the fiscal year over the whole joined
+panel (`<name>_score`), oriented so that higher is better. Its percentile
+within its sector and year (`<name>_sector_score`) is kept beside it as
+context; it is not scored.
+
+`<name>_status` says how each ratio was read:
+
+| Status | Meaning | Score |
+|---|---|---|
+| `reported` | A number, ranked with the others | its percentile |
+| `negative earnings` | Price-to-earnings with net income below zero, or a ratio at or below zero (the source writes 0 for a loss) | worst |
+| `negative equity` | Return on equity or debt-to-equity with shareholders' equity below zero | worst |
+| `no interest expense` | Interest coverage of 0 for a company paying no interest (the coverage is really unbounded) | best |
+| `not reported` | Missing | 0.5 |
+
+Odd values stay worst or best whichever way the criterion points, and several
+worst rows share the lowest rank. A ratio missing for a bad reason (say, no
+return on equity because equity is negative) is scored worst, not 0.5. A company
+with more than three of the six ratios not reported is marked
+`too_few_ratios` and leaves the evaluation; the rebuild prints how many per
+year, with their tail losers.
+
+Each criterion's direction is learned on the training years (fiscal
+2014–2016) from its tail-loss AUC: the chance that a company avoiding a
+tail loss scores higher, in the textbook direction, than a tail loser (ties
+count half; rows with the ratio not reported are left out). At or below 0.45
+the criterion is flipped, at or above 0.55 it is kept, and in between it is
+dropped and gets no score.
+
 ## Figures
 
 `make all` ends by drawing the report's figures into `data/figures/`, each as
@@ -184,7 +220,7 @@ src/ai_mcdm_invest/
   data/          clean panel, company links, joined panel, filings table,
                  worked-example passages
   figures/       report figures drawn from the tables
-  criteria/      ratio criteria
+  criteria/      ratio criteria and their learned directions
   ml/            ML risk score
   llm/           LLM extraction from 10-K filings
   mcdm/          weighted sum and TOPSIS

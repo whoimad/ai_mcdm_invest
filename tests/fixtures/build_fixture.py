@@ -18,6 +18,9 @@ Design (the "known answers" tests rely on):
 - Three extra rows must be dropped by cleaning: ZULU (2014, +2500%, a data
   error), ZZNR (2016, no return) and ZZWO (2017, -100%).
 - ECHO reports no revenue in 2014 (a missing fundamental that must be kept).
+- ALFA has negative shareholders' equity (and so a negative debt-to-equity),
+  so its return on equity and debt-to-equity are scored worst. Every row
+  pays some interest.
 - LIMA has two more securities in fiscal 2018, reporting LIMA's own figures:
   LIMAK, a second share class with twice LIMA's market cap, and LIMAP, a
   preferred share with no market cap. All three match LIMA's filer, and the
@@ -107,7 +110,7 @@ SHARE_CLASSES = {
 HEADER = (
     "Revenue,Net Income,Total assets,Total debt,Market Cap,debtEquityRatio,"
     "currentRatio,returnOnEquity,netProfitMargin,priceEarningsRatio,priceToBookRatio,"
-    "interestCoverage,Sector"
+    "interestCoverage,Total shareholders equity,Interest Expense,Sector"
 )
 
 
@@ -130,6 +133,14 @@ def figures(i: int, year: int) -> tuple[float, float, float, float, float]:
 def debt_to_equity(i: int) -> str:
     """Debt-to-equity of row i: spread over 0-2, negative (negative equity) for ALFA."""
     return f"{(i * 7) % 11 / 5 - 0.2:.2f}"
+
+
+def equity_and_interest(i: int, year: int) -> list[str]:
+    """Shareholders' equity (negative for ALFA, as its debt-to-equity says) and
+    interest expense of row i."""
+    _, _, assets, debt, _ = figures(i, year)
+    equity = -debt / 0.2 if i == 0 else assets - debt
+    return [f"{equity:.1f}", f"{debt * 0.05:.1f}"]
 
 
 def ratios(i: int) -> list[str]:
@@ -163,7 +174,16 @@ def rows(year: int) -> list[str]:
         label = "" if ret is None else str(int(ret > 0))
         out.append(
             ",".join(
-                [ticker, *cells, debt_to_equity(i), *ratios(i), SECTORS[i % 5], ret_cell, label]
+                [
+                    ticker,
+                    *cells,
+                    debt_to_equity(i),
+                    *ratios(i),
+                    *equity_and_interest(i, year),
+                    SECTORS[i % 5],
+                    ret_cell,
+                    label,
+                ]
             )
         )
     for ticker, issuer, cap_multiple, ret in SHARE_CLASSES.get(year, []):
@@ -177,6 +197,7 @@ def rows(year: int) -> list[str]:
                     *cells,
                     debt_to_equity(i),
                     *ratios(i),
+                    *equity_and_interest(i, year),
                     SECTORS[i % 5],
                     f"{ret}",
                     str(int(ret > 0)),

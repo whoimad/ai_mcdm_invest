@@ -6,6 +6,7 @@ Run with `make all` or `uv run python -m ai_mcdm_invest.pipeline`.
 import pandas as pd
 
 from ai_mcdm_invest.config import Settings
+from ai_mcdm_invest.criteria.ratios import learn_directions, score_ratios
 from ai_mcdm_invest.data.corpus import load_corpus
 from ai_mcdm_invest.data.filings import build_filings
 from ai_mcdm_invest.data.join_report import (
@@ -69,6 +70,15 @@ def run(settings: Settings) -> None:
     print(f"filings table: {len(filings)} rows, written to {path}")
     print(_filing_counts(filings).to_string())
 
+    directions = learn_directions(joined)
+    path = write_table(directions, settings.processed_dir, "criterion_directions")
+    print(f"criterion directions: written to {path}")
+    print(directions[["criterion", "training_auc", "direction"]].to_string(index=False))
+    criteria = score_ratios(joined, directions)
+    path = write_table(criteria, settings.processed_dir, "ratio_criteria")
+    print(f"ratio criteria: {len(criteria)} rows, written to {path}")
+    print(_too_few_ratios(criteria, joined).to_string())
+
     passages = worked_example_passages(filings, settings.raw_corpus_dir, *settings.worked_example)
     path = write_table(passages, settings.processed_dir, "worked_example")
     print(f"worked example: {len(passages)} passages, written to {path}")
@@ -87,6 +97,23 @@ def _link_counts(links: pd.DataFrame, clean: pd.DataFrame) -> pd.DataFrame:
     counts["tail_linked"] = linked.groupby("fiscal_year")["tail_loss"].sum()
     counts["tail_total"] = table.groupby("fiscal_year")["tail_loss"].sum()
     return counts.fillna(0).astype(int)
+
+
+def _too_few_ratios(criteria: pd.DataFrame, joined: pd.DataFrame) -> pd.DataFrame:
+    """Rows per fiscal year missing more than half of the ratios, with their tail losers."""
+    too_few = criteria["too_few_ratios"]
+    tail_loss = joined.loc[too_few, "tail_loss"]
+    return (
+        pd.DataFrame(
+            {
+                "rows": criteria.groupby("fiscal_year").size(),
+                "too_few_ratios": too_few.groupby(criteria["fiscal_year"]).sum(),
+                "their_tail_losers": tail_loss.groupby(criteria.loc[too_few, "fiscal_year"]).sum(),
+            }
+        )
+        .fillna(0)
+        .astype(int)
+    )
 
 
 def _filing_counts(filings: pd.DataFrame) -> pd.DataFrame:

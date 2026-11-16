@@ -49,6 +49,8 @@ def test_keeps_fundamentals_sector_and_return(raw_panel: pd.DataFrame) -> None:
         "priceEarningsRatio",
         "priceToBookRatio",
         "interestCoverage",
+        "Total shareholders equity",
+        "Interest Expense",
         "next_year_return",
         "tail_loss",
     ]
