@@ -1,0 +1,3 @@
+# The notebook is saved with its figures, so its bytes are mostly images;
+# keep it out of GitHub's language statistics.
+notebooks/*.ipynb linguist-documentation
