@@ -76,6 +76,8 @@ plus a CSV copy to open by hand, and reports as Markdown under `data/reports/`.
 | `data/processed/filings` | Filings table: one row per joined-panel row, describing the 10-K for its period (see below) |
 | `data/processed/criterion_directions` | Each ratio criterion's `group`, textbook direction, `training_auc` and `flipped_training_auc`, and learned `direction` (`keep`, `flip`, `drop`) |
 | `data/processed/ratio_criteria` | Ratio criteria: one row per joined-panel row, each criterion's `<name>_score`, `<name>_sector_score` and `<name>_status`, with `ratios_not_reported` and `too_few_ratios` (see below) |
+| `data/processed/baselines` | Size (`market_cap`) and last year's price move (`last_year_return`, %) for each joined-panel row, kept outside MCDM |
+| `data/processed/ablation` | The layer ablation: one row per `layer`, `profile`, `method` and `fiscal_year` (2017, 2018, `pooled`), plus the baselines, with `companies`, `tail_losers` and the four measures (see below) |
 | `data/processed/worked_example` | The 10-K passages the worked-example figure quotes: `ticker`, `cik`, `fiscal_year`, `item`, `passage` |
 | `data/reports/join_report.md` | Companies and tail losers kept and lost at each join step per year, the fiscal 2017 coverage, and 20 random figure-match recoveries to check by eye |
 
@@ -173,6 +175,44 @@ ways are tried: negative equity is the riskiest, but among the other companies
 more debt goes with fewer tail losses (the `leverage_tail_loss` figure).
 Taken one way only, the two cancel out and debt-to-equity would be dropped.
 
+## Ranking and the ablation
+
+The ranker is the weighted sum (SAW): each company's weighted mean of its
+criteria. TOPSIS, the closeness to an ideal company, is run beside it as a
+robustness check. Weights come from three profiles fixed before testing, by
+criterion group, and are never fitted to returns:
+
+| Profile | Profitability | Valuation | Balance sheet | ML risk | Text |
+|---|---|---|---|---|---|
+| Balanced | 20% | 20% | 20% | 20% | 20% |
+| Risk-averse | 10% | 10% | 20% | 40% | 20% |
+| Value-minded | 25% | 35% | 10% | 20% | 10% |
+
+A group's weight is split equally over its criteria in use (a dropped ratio
+leaves its share to the others in its group). A group with no criterion in use
+(its layer switched off, or not built yet) loses its weight, and the rest are
+rescaled to 100%. A company without a value for a criterion is ranked on its
+remaining criteria. A constant criterion does not break either ranker: it adds
+the same to everyone in SAW and nothing in TOPSIS.
+
+The ablation measures every row on the same companies, the evaluation
+universe: fiscal 2017 and 2018 rows whose 10-K text is in the corpus, less
+those with too few ratios (the auditor's-report condition joins once the text
+layer locates it). Size (bigger is safer) and last year's price move (a rise
+is safer) are ranked beside the layers as baselines that cost nothing; a
+company with no prior-year row, or no market cap, is put in the middle of its
+year. Each ranking is described per test year and pooled, with scores and
+returns ranked within each year first:
+
+| Column | Meaning |
+|---|---|
+| `tail_loss_auc` | The chance that a company avoiding a tail loss ranks safer than a tail loser (ties count half) |
+| `riskiest_fifth_tail_share`, `safest_fifth_tail_share` | The share of the tail losers that fall in each year's riskiest or safest fifth (20% each at random) |
+| `rank_correlation` | Rank correlation of the score with the next-year return |
+| `top_minus_bottom_return` | Mean next-year return of the safest fifth minus the riskiest, in percentage points |
+
+So far the ablation has its `ratios only` rows; the ML and text layers add theirs.
+
 ## Figures
 
 `make all` ends by drawing the report's figures into `data/figures/`, each as
@@ -227,8 +267,8 @@ src/ai_mcdm_invest/
   criteria/      ratio criteria and their learned directions
   ml/            ML risk score
   llm/           LLM extraction from 10-K filings
-  mcdm/          weighted sum and TOPSIS
-  evaluation/    layer ablation and tests
+  mcdm/          weighted sum, TOPSIS and the weight profiles
+  evaluation/    baselines, evaluation universe and layer ablation
 tests/
   fixtures/      fictional companies with known answers
 notebooks/

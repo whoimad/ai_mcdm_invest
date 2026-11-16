@@ -141,6 +141,30 @@ def test_rebuild_writes_the_ratio_criteria_and_their_directions(
     assert (tmp_path / "processed" / "ratio_criteria.csv").exists()
 
 
+def test_rebuild_writes_the_ablation_table_with_its_ratios_only_rows(
+    fixture_raw_dir: Path, tmp_path: Path
+) -> None:
+    run(fixture_settings(fixture_raw_dir, tmp_path))
+
+    ablation = pd.read_parquet(tmp_path / "processed" / "ablation.parquet")
+    ratios = ablation[ablation["layer"] == "ratios only"]
+    assert len(ratios) == 3 * 2 * 3  # profiles, SAW and TOPSIS, 2017, 2018 and pooled
+    assert set(ablation["layer"]) == {
+        "ratios only",
+        "size baseline",
+        "last year's price move baseline",
+    }
+    # Every row is measured on the same companies: all 22 filers, but for
+    # QUBC, which filed no 10-K for fiscal 2017.
+    by_year = ablation.groupby("fiscal_year")["companies"].unique()
+    assert by_year["2017"].tolist() == [21]
+    assert by_year["2018"].tolist() == [22]
+    assert ablation["tail_loss_auc"].between(0, 1).all()
+    baselines = pd.read_parquet(tmp_path / "processed" / "baselines.parquet")
+    assert len(baselines) == 22 * 5
+    assert (tmp_path / "processed" / "ablation.csv").exists()
+
+
 STORYLINE_FIGURES = ["join_funnel", "leverage_tail_loss", "section_lengths", "going_concern_items"]
 EXPLORATORY_FIGURES = [
     "companies_per_sector",

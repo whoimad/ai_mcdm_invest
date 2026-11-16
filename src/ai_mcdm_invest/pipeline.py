@@ -20,6 +20,7 @@ from ai_mcdm_invest.data.panel import clean_panel, load_raw_panel
 from ai_mcdm_invest.data.raw_manifest import load_manifest, verify_raw_files
 from ai_mcdm_invest.data.submissions import load_submissions
 from ai_mcdm_invest.data.worked_example import worked_example_passages
+from ai_mcdm_invest.evaluation.ablation import ablation_table, baselines, evaluation_universe
 from ai_mcdm_invest.figures.common import write_figures
 from ai_mcdm_invest.figures.draw import report_figures
 from ai_mcdm_invest.tables import write_table
@@ -83,6 +84,16 @@ def run(settings: Settings) -> None:
     print(f"ratio criteria: {len(criteria)} rows, written to {path}")
     print(_too_few_ratios(criteria, joined).to_string())
 
+    baseline_table = baselines(joined)
+    path = write_table(baseline_table, settings.processed_dir, "baselines")
+    print(f"baselines: written to {path}")
+    universe = evaluation_universe(joined, criteria, filings, baseline_table)
+    print(_universe_counts(universe).to_string())
+    ablation = ablation_table(universe, directions)
+    path = write_table(ablation, settings.processed_dir, "ablation")
+    print(f"ablation table: {len(ablation)} rows, written to {path}")
+    print(_ablation_summary(ablation).to_string(index=False))
+
     passages = worked_example_passages(filings, settings.raw_corpus_dir, *settings.worked_example)
     path = write_table(passages, settings.processed_dir, "worked_example")
     print(f"worked example: {len(passages)} passages, written to {path}")
@@ -118,6 +129,28 @@ def _too_few_ratios(criteria: pd.DataFrame, joined: pd.DataFrame) -> pd.DataFram
         .fillna(0)
         .astype(int)
     )
+
+
+def _universe_counts(universe: pd.DataFrame) -> pd.DataFrame:
+    """Companies and tail losers per test year in the evaluation universe."""
+    by_year = universe.groupby("fiscal_year")["tail_loss"]
+    return pd.DataFrame({"evaluated": by_year.size(), "tail_losers": by_year.sum()})
+
+
+def _ablation_summary(ablation: pd.DataFrame) -> pd.DataFrame:
+    """The ablation's pooled SAW rows and baselines, rounded to read on screen."""
+    pooled = ablation[(ablation["fiscal_year"] == "pooled") & (ablation["method"] != "TOPSIS")]
+    columns = [
+        "layer",
+        "profile",
+        "companies",
+        "tail_loss_auc",
+        "riskiest_fifth_tail_share",
+        "safest_fifth_tail_share",
+        "rank_correlation",
+        "top_minus_bottom_return",
+    ]
+    return pooled[columns].round(3)
 
 
 def _filing_counts(filings: pd.DataFrame) -> pd.DataFrame:

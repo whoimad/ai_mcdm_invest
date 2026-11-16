@@ -101,6 +101,14 @@ def learn_directions(joined: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def scored_criteria(directions: pd.DataFrame) -> dict[str, str]:
+    """Each scored criterion's score column and its group: the kept and flipped ones."""
+    used = directions[directions["direction"] != "drop"]
+    return {
+        f"{name}_score": group for name, group in zip(used["criterion"], used["group"], strict=True)
+    }
+
+
 def tail_loss_auc(score: pd.Series, tail_loss: pd.Series) -> float:
     """The chance that a company avoiding a tail loss scores higher than a tail
     loser, ties counting half (the Mann-Whitney form of the AUC)."""
