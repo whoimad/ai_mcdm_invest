@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from ai_mcdm_invest.config import Settings
-from ai_mcdm_invest.data.corpus import load_corpus
+from ai_mcdm_invest.data.corpus import describe_record, load_corpus
 
 
 @pytest.fixture(scope="module")
@@ -53,6 +53,19 @@ def test_stub_sections_count_as_absent(corpus: pd.DataFrame) -> None:
 def test_going_concern_wording_is_located_by_item(corpus: pd.DataFrame) -> None:
     assert record(corpus, 1017, "2015-12-31")["gc_keyword_items"] == "1A;8"
     assert record(corpus, 1017, "2016-12-31")["gc_keyword_items"] == ""
+
+
+def test_a_10k_without_a_located_auditors_report_is_marked_fallback_read() -> None:
+    report = (
+        "Report of Independent Registered Public Accounting Firm\n"
+        "We have audited the balance sheets of Alfa Corp. as of December 31, 2015.\n"
+        "/s/ Smith & Jones LLP\nMarch 14, 2016\n"
+    )
+    with_report = {"cik": "1000", "year": "2015", "section_8": report, "section_15": ""}
+    without = {"cik": "1000", "year": "2015", "section_8": "Item 8. See Item 15.", "section_15": ""}
+
+    assert not describe_record(with_report)["fallback_read"]
+    assert describe_record(without)["fallback_read"]
 
 
 def test_missing_corpus_folder_says_how_to_fetch(tmp_path: Path) -> None:

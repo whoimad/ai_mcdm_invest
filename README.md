@@ -116,7 +116,8 @@ public before the return year began), `december_year_end`, `nt_10k` (a
 late-filing notice was filed), `in_corpus` and `corpus_year` (where its text
 is), `has_item_{1,1A,3,7,8,9A,15}`, `tokens_item_{1,1A,7,8,15}` and
 `tokens_total` (characters ÷ 4), `gc_keyword_items` (Items containing
-"going concern", `;`-separated), `item1a_changed_share`, then
+"going concern", `;`-separated), `fallback_read` (no auditor's report
+located, see below), `item1a_changed_share`, then
 `next_year_return` and `tail_loss`.
 
 The 10-K is chosen by the period it reports on, never by filing order: a row
@@ -138,6 +139,77 @@ such stubs, the statements being placed in Item 15. `item1a_changed_share`
 is the share of this year's Item 1A paragraphs of which fewer than half the
 sentences appear word for word in the prior year's Item 1A; it is empty when
 either year has no Item 1A.
+
+### 10-K text
+
+A 10-K is the annual report a US public company files with the SEC. Its
+layout is set by the SEC: numbered Items, the same for every company. The
+ones this study uses:
+
+| Item | Contents | Used for |
+|---|---|---|
+| 1 | Business | Presence, length |
+| 1A | Risk factors | `item1a_changed_share` |
+| 7 | Management's discussion and analysis (MD&A) | Period end, length |
+| 8 | Financial statements, usually with the auditor's report | Period end, auditor's report |
+| 15 | Exhibits and schedules; some companies put the statements and the auditor's report here instead of in Item 8 | Period end, auditor's report |
+
+On EDGAR the official filing is an HTML page (plain text with SGML markup
+before about 2001; Inline XBRL, still HTML, since 2019). A PDF copy may be
+attached but is not the official filing. The study never reads the HTML.
+EDGAR-CORPUS has already turned each 10-K into plain text, split by Item,
+one JSON line per filing:
+
+```
+{"filename": "1514994_2016.htm", "cik": "1514994", "year": "2016",
+ "section_1": "...", "section_1A": "...", ..., "section_8": "...", "section_15": "..."}
+```
+
+The conversion loses some things, and the code is written around that:
+
+- **Tables are mostly gone.** A statement keeps its title ("CONSOLIDATED
+  STATEMENTS OF CASH FLOWS") but not its numbers, so financial figures come
+  from the Kaggle panel and the XBRL frames, never from the text.
+- **Lines can be dropped or merged.** Some auditor's reports lost their
+  signature and date, so a missing date does not drop a report.
+- **The `year` label is not reliable**, so the period is read from the text
+  (see above).
+
+From a corpus record to what the LLM reads:
+
+1. `data/corpus.py` turns the `section_<Item>` fields into an Item → text
+   map, flags stub Items as absent, reads the period end, and keeps only
+   facts (presence, length, going-concern wording). Raw text stays in the
+   corpus files.
+2. `llm/locate.py` finds the auditor's report in Items 8 and 15 by
+   document structure: the heading "Report of Independent Registered
+   Public Accounting Firm" down to the auditor's signature date. A heading
+   counts only when the opinion opens within 1,500 characters after it ("We
+   have audited", or "In our opinion"), so index entries and
+   cross-references are skipped. The report ends at the first line that
+   starts with a date, else at the next heading.
+3. Each report is its own chunk of at most about 6k tokens (24,000
+   characters). A 10-K can have several: a separate report on internal
+   control, or one from a former auditor.
+4. When no report is found (asset-backed trusts, statements incorporated by
+   reference), both Items are read in full in 6k-token chunks cut between
+   lines, and the 10-K is marked `fallback_read`, so its results can be
+   shown apart. That is 5.0% of the fiscal 2014–2016 10-Ks in the corpus.
+
+A located report, shortened (North Texas Energy, fiscal 2016):
+
+```
+REPORT OF INDEPENDENT REGISTERED PUBLIC ACCOUNTING FIRM      <- heading
+To the Board of Directors and Stockholders of North Texas Energy, Inc.
+We have audited the accompanying consolidated balance sheets  <- opening
+...
+In our opinion, the financial statements referred to above present fairly ...
+... These factors raise substantial doubt about its ability to continue as
+a going concern. ...
+/s/ GBH CPAs, PC
+Houston, Texas
+September 29, 2017                                            <- end
+```
 
 ## Ratio criteria
 

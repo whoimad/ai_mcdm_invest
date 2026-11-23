@@ -75,8 +75,9 @@ def build_filings(
       period is unknown: a row linked by ticker whose filer lists no 10-K)
     - `in_corpus`, `corpus_year`: whether the 10-K's text is in EDGAR-CORPUS,
       and the label of its record there (to find the text again)
-    - `has_item_*`, `tokens_item_*`, `tokens_total`, `gc_keyword_items`: from
-      the corpus record (see `corpus.py`), empty when not in the corpus
+    - `has_item_*`, `tokens_item_*`, `tokens_total`, `gc_keyword_items`,
+      `fallback_read`: from the corpus record (see `corpus.py`), empty when
+      not in the corpus
     - `item1a_changed_share`: share of Item 1A paragraphs new or substantially
       changed since the prior year's 10-K, empty when there is no prior Item 1A
     """

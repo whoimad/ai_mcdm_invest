@@ -24,6 +24,9 @@ from pathlib import Path
 
 import pandas as pd
 
+from ai_mcdm_invest.data.text import CHARS_PER_TOKEN, LONG_DATE_PATTERN
+from ai_mcdm_invest.llm.locate import locate_auditor_reports
+
 # Items the filings table reports on: presence, estimated tokens.
 PRESENCE_ITEMS = ["1", "1A", "3", "7", "8", "9A", "15"]
 TOKEN_ITEMS = ["1", "1A", "7", "8", "15"]
@@ -32,9 +35,8 @@ TOKEN_ITEMS = ["1", "1A", "7", "8", "15"]
 FACT_DTYPES = (
     {f"has_item_{item}": "boolean" for item in PRESENCE_ITEMS}
     | {f"tokens_item_{item}": "Int64" for item in TOKEN_ITEMS}
-    | {"tokens_total": "Int64", "gc_keyword_items": "string"}
+    | {"tokens_total": "Int64", "gc_keyword_items": "string", "fallback_read": "boolean"}
 )
-CHARS_PER_TOKEN = 4
 
 # A section is a stub, and counts as absent, when what is left after its
 # headings and titles is shorter than `MIN_BODY_CHARS`, holds no sentence (a
@@ -65,8 +67,7 @@ LONG_WORD = re.compile(r"[A-Za-z][A-Za-z’'-]{3,}")
 
 GOING_CONCERN = re.compile(r"going[\s-]+concern", re.IGNORECASE)
 
-MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
-LONG_DATE = re.compile(rf"\b({MONTHS})\s+(\d{{1,2}}),\s*((?:19|20)\d\d)\b")
+LONG_DATE = re.compile(LONG_DATE_PATTERN)
 PERIOD_ITEMS = ["7", "8", "15"]
 
 # Item 1A paragraphs shorter than this are headings, not risk factors.
@@ -83,7 +84,8 @@ def load_corpus(corpus_dir: Path, ciks: set[int]) -> pd.DataFrame:
     Columns: `cik`, `corpus_year` (the record's label), `period_end` (read
     from the text; empty when the text names no date), `has_item_<Item>` for
     `PRESENCE_ITEMS`, `tokens_item_<Item>` for `TOKEN_ITEMS`, `tokens_total`,
-    `gc_keyword_items` (Items with going-concern wording, `;`-separated) and
+    `gc_keyword_items` (Items with going-concern wording, `;`-separated),
+    `fallback_read` (no auditor's report located, see `llm/locate.py`) and
     `item1a_paragraphs` (each Item 1A paragraph as a tuple of sentence
     fingerprints, for year-on-year comparison).
     """
@@ -152,6 +154,7 @@ def describe_record(record: dict) -> dict:
     facts["gc_keyword_items"] = ";".join(
         item for item, text in sections.items() if GOING_CONCERN.search(text)
     )
+    facts["fallback_read"] = locate_auditor_reports(sections).fallback_read
     item_1a = sections.get("1A", "")
     facts["item1a_paragraphs"] = (
         tuple(_paragraph_fingerprints(item_1a)) if facts["has_item_1A"] else ()
