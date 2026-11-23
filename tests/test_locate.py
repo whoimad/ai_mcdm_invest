@@ -1,5 +1,7 @@
 """Locating the auditor's report: a 10-K's Item texts in, the chunks the LLM reads out."""
 
+import pytest
+
 from ai_mcdm_invest.llm.locate import CHUNK_CHARS, locate_auditor_reports
 
 HEADING = "REPORT OF INDEPENDENT REGISTERED PUBLIC ACCOUNTING FIRM"
@@ -121,3 +123,19 @@ def test_a_fallback_line_longer_than_a_chunk_is_cut_at_the_cap() -> None:
     located = locate_auditor_reports({"8": item_8})
 
     assert [len(chunk.text) for chunk in located.chunks] == [CHUNK_CHARS, CHUNK_CHARS, 100]
+
+
+@pytest.mark.parametrize(
+    "heading",
+    [
+        "REPORT OF INDEPENDENT REGISTERED ACCOUNTING FIRM",
+        "Report of Independent Registered Certified Public Accounting Firm",
+    ],
+)
+def test_heading_variants_seen_in_filings_are_found(heading: str) -> None:
+    item_8 = f"Item 8.\n{heading}\n{OPINION}{SIGNATURE}{NOTES}"
+
+    located = locate_auditor_reports({"8": item_8})
+
+    assert not located.fallback_read
+    assert located.chunks[0].text == f"{heading}\n{OPINION}{SIGNATURE}".rstrip("\n")

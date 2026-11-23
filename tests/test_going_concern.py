@@ -7,6 +7,7 @@ import itertools
 import json
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -296,3 +297,23 @@ def test_a_new_check_version_rescores_finished_filings_from_cached_replies(
     assert first["status"].tolist() == ["extraction_failed"]
     assert again["status"] == "clear"
     assert len(client.prompts) == 3
+
+
+def test_a_write_cut_short_by_a_kill_does_not_stop_the_next_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write_text = Path.write_text
+
+    def killed_halfway(path: Path, text: str, *args: Any, **kwargs: Any) -> int:
+        write_text(path, text[: len(text) // 2], *args, **kwargs)
+        raise KeyboardInterrupt
+
+    client = FakeClient(lambda prompt: answer(DOUBT))
+    monkeypatch.setattr(Path, "write_text", killed_halfway)
+    with pytest.raises(KeyboardInterrupt):
+        extract_going_concern(chunks(REPORT), client, tmp_path)
+    monkeypatch.undo()
+
+    row = only_row(extract_going_concern(chunks(REPORT), client, tmp_path))
+
+    assert row["status"] == "flagged"

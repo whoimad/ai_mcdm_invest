@@ -28,6 +28,7 @@ from ai_mcdm_invest.llm.going_concern import (
     LLMClient,
     extract_going_concern,
     filing_status,
+    write_whole,
 )
 from ai_mcdm_invest.llm.locate import locate_auditor_reports
 from ai_mcdm_invest.llm.ollama import OllamaClient
@@ -166,7 +167,7 @@ def _seconds(store_dir: Path, accession: str, elapsed: float, asked: bool) -> fl
     path = store_dir / "seconds" / f"{accession}.json"
     if asked or not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(elapsed))
+        write_whole(path, json.dumps(elapsed))
         return elapsed
     return json.loads(path.read_text())
 

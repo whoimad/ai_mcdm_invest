@@ -7,6 +7,7 @@ checks the quote is in the chunk and turns the facts into the score.
 
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any, Protocol
@@ -126,7 +127,7 @@ def extract_going_concern(chunks: pd.DataFrame, client: LLMClient, store_dir: Pa
             _extract_chunk(chunk, client, store_dir / "responses") for chunk in filing.itertuples()
         ]
         marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text(json.dumps(filing_rows))
+        write_whole(marker, json.dumps(filing_rows))
         rows += filing_rows
     return pd.DataFrame(rows)
 
@@ -150,6 +151,14 @@ def _extract_chunk(chunk: Any, client: LLMClient, cache_dir: Path) -> dict:
         "model_version": client.model_version,
         "prompt_version": PROMPT_VERSION,
     }
+
+
+def write_whole(path: Path, text: str) -> None:
+    """Write `text` to `path` whole or not at all: a run killed mid-write leaves
+    the file missing, never half-written, so the next run reads it again."""
+    part = path.with_name(path.name + ".part")
+    part.write_text(text)
+    os.replace(part, path)
 
 
 def _key(model_version: str, text: str) -> str:
@@ -180,7 +189,7 @@ def _complete(client: LLMClient, prompt: str, cache_dir: Path) -> str:
         return json.loads(path.read_text())["reply"]
     reply = client.complete(prompt, SCHEMA)
     cache_dir.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"model_version": client.model_version, "reply": reply}))
+    write_whole(path, json.dumps({"model_version": client.model_version, "reply": reply}))
     return reply
 
 

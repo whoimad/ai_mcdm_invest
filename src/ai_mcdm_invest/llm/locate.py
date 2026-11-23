@@ -25,8 +25,12 @@ REPORT_ITEMS = ["8", "15"]
 CHUNK_TOKENS = 6000
 CHUNK_CHARS = CHUNK_TOKENS * CHARS_PER_TOKEN
 
+# Also "Registered Accounting Firm" and "Registered Certified Public Accounting
+# Firm", both seen in the 50-filing pilot.
 HEADING = re.compile(
-    r"report\s+of\s+independent\s+registered\s+public\s+accounting\s+firms?", re.IGNORECASE
+    r"report\s+of\s+independent\s+registered\s+(?:certified\s+)?(?:public\s+)?"
+    r"accounting\s+firms?",
+    re.IGNORECASE,
 )
 OPENING_CHARS = 1500
 AUDIT_OPENING = re.compile(r"we\s+have\s+(?:audited|examined)|in\s+our\s+opinion", re.IGNORECASE)
