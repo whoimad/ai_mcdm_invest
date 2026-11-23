@@ -14,6 +14,10 @@ from typing import Any, Protocol
 import pandas as pd
 
 PROMPT_VERSION = "gc-1"
+# The checks a reply must pass. A change rescores finished filings from the
+# cached replies; the model is asked again only where the new checks reject a
+# cached reply, since the retry prompt carries the new rejection message.
+CHECK_VERSION = "check-2"
 # A failed check is retried twice, then recorded as failed (decision 6.5).
 ATTEMPTS = 3
 
@@ -106,13 +110,14 @@ def extract_going_concern(chunks: pd.DataFrame, client: LLMClient, store_dir: Pa
     Under `store_dir`, `responses/` caches every reply and `filings/` holds a
     completion marker per finished filing, so a killed run picks up where it
     stopped. Both are keyed by prompt version, model version and the text read,
-    so changing any of them reads the filing again.
+    so changing any of them reads the filing again. The markers are also keyed
+    by `CHECK_VERSION`, so a changed check rescores from the cached replies.
     """
     rows = []
     for filing_id, filing in chunks.groupby("filing_id", sort=False):
         # Keyed by the chunks too, so a changed locate rule reads the filing again.
         texts = filing[["period_end", "item", "text"]].astype(str).to_numpy().tolist()
-        filing_key = _key(client.model_version, json.dumps([str(filing_id), texts]))
+        filing_key = _key(client.model_version, json.dumps([CHECK_VERSION, str(filing_id), texts]))
         marker = store_dir / "filings" / f"{filing_key}.json"
         if marker.exists():
             rows += json.loads(marker.read_text())
@@ -190,8 +195,12 @@ def _parse(reply: str, text: str) -> tuple[dict | None, str | None]:
         return None, 'it had no "quote" text'
     if not all(isinstance(answer.get(field), bool) for field in FIELDS):
         return None, f"it did not give true or false for each of {', '.join(FIELDS)}"
-    if not _squash(answer["quote"]) and any(answer[field] for field in FIELDS):
-        return None, "it answered true without quoting a passage"
+    if not _squash(answer["quote"]):
+        # No passage quoted: there is nothing for the other facts to be about,
+        # so they are stored as false. Doubt without a quote is still rejected.
+        if answer["doubt_expressed"]:
+            return None, "it said doubt is expressed without quoting a passage"
+        return {"quote": ""} | dict.fromkeys(FIELDS, False), None
     if not quote_found(answer["quote"], text):
         return None, "the quote is not word for word in the text"
     return {field: answer[field] for field in ["quote", *FIELDS]}, None

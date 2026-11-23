@@ -11,6 +11,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from ai_mcdm_invest.llm import going_concern
 from ai_mcdm_invest.llm.going_concern import (
     FIELDS,
     extract_going_concern,
@@ -151,6 +152,22 @@ def test_an_empty_quote_means_no_passage_and_cannot_carry_doubt(tmp_path: Path) 
     assert results["status"].tolist() == ["clear", "extraction_failed"]
 
 
+def test_an_empty_quote_without_doubt_is_nothing_found_whatever_else_it_says(
+    tmp_path: Path,
+) -> None:
+    # Seen in a 3-filing probe: clean reports came back with an empty quote but
+    # `this_company` or `current_year` set to true.
+    clean_report = REPORT.replace(DOUBT, "In our opinion, the statements present fairly.")
+    client = FakeClient(lambda prompt: answer("", doubt_expressed=False))
+
+    row = only_row(extract_going_concern(chunks(clean_report), client, tmp_path))
+
+    assert len(client.prompts) == 1
+    assert row["status"] == "clear"
+    assert row["quote"] == ""
+    assert not any(row[field] for field in FIELDS)
+
+
 STALE = (
     "In our report dated March 20, 2015, we expressed an opinion that the Company's recurring "
     "losses raised substantial doubt about its ability to continue as a going concern."
@@ -261,3 +278,21 @@ def test_a_filing_whose_located_text_changed_is_read_again(tmp_path: Path) -> No
     results = extract_going_concern(chunks(REPORT, filing="A"), second, tmp_path)
 
     assert results["status"].tolist() == ["flagged"]
+
+
+def test_a_new_check_version_rescores_finished_filings_from_cached_replies(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    clean_report = REPORT.replace(DOUBT, "In our opinion, the statements present fairly.")
+    # A stricter check than today's: every answer is rejected.
+    monkeypatch.setattr(going_concern, "_parse", lambda reply, text: (None, "rejected"))
+    monkeypatch.setattr(going_concern, "CHECK_VERSION", "stricter")
+    client = FakeClient(lambda prompt: NOTHING)
+    first = extract_going_concern(chunks(clean_report), client, tmp_path)
+    monkeypatch.undo()
+
+    again = only_row(extract_going_concern(chunks(clean_report), client, tmp_path))
+
+    assert first["status"].tolist() == ["extraction_failed"]
+    assert again["status"] == "clear"
+    assert len(client.prompts) == 3
