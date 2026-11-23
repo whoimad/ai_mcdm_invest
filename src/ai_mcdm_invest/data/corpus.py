@@ -18,6 +18,7 @@ import json
 import multiprocessing
 import re
 from collections import Counter
+from collections.abc import Iterator
 from concurrent.futures import ProcessPoolExecutor
 from datetime import date, datetime
 from pathlib import Path
@@ -128,6 +129,25 @@ def load_record_sections(corpus_dir: Path, cik: int, corpus_year: int) -> dict[s
     raise FileNotFoundError(
         f"no corpus record for CIK {cik} labelled {corpus_year} in {corpus_dir}"
     )
+
+
+def iter_record_sections(
+    corpus_dir: Path, keys: set[tuple[int, int]]
+) -> Iterator[tuple[tuple[int, int], dict[str, str]]]:
+    """The Item texts of each corpus record in `keys` (`(cik, corpus_year)`), one
+    record at a time, reading each label year's files once."""
+    for corpus_year in sorted({year for _, year in keys}):
+        ciks = {cik for cik, year in keys if year == corpus_year}
+        for path in sorted(corpus_dir.glob(f"{corpus_year}_*.jsonl")):
+            with path.open("rb") as file:
+                for line in file:
+                    prefix = CIK_PREFIX.match(line)
+                    if prefix and int(prefix.group(1)) not in ciks:
+                        continue  # skip parsing records of other filers
+                    record = json.loads(line)
+                    key = (int(record["cik"]), int(record["year"]))
+                    if key in keys:
+                        yield key, _sections(record)
 
 
 def _sections(record: dict) -> dict[str, str]:
