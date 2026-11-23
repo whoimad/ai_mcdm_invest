@@ -195,6 +195,17 @@ From a corpus record to what the LLM reads:
    reference), both Items are read in full in 6k-token chunks cut between
    lines, and the 10-K is marked `fallback_read`, so its results can be
    shown apart. That is 5.0% of the fiscal 2014–2016 10-Ks in the corpus.
+5. `llm/going_concern.py` sends each chunk to the LLM, which returns the
+   going-concern passage word for word, then five yes/no facts about it: is it
+   the auditor's opinion, about this company, about the fiscal year the 10-K
+   covers, does it express doubt, did management's plans alleviate it. Code
+   checks the quote is in the chunk (ignoring whitespace). An answer that fails
+   a check is asked again twice, then recorded as `extraction_failed`, never as
+   clear. A chunk is `flagged` only when the first four facts are all yes; the
+   fifth is kept for error analysis. A 10-K is flagged when any chunk is, else
+   failed when any chunk failed, else clear. Every reply is cached by prompt
+   version, model version and prompt text, and each finished 10-K leaves a
+   marker, so an interrupted run resumes where it stopped.
 
 A located report, shortened (North Texas Energy, fiscal 2016):
 
