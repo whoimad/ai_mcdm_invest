@@ -117,7 +117,8 @@ late-filing notice was filed), `in_corpus` and `corpus_year` (where its text
 is), `has_item_{1,1A,3,7,8,9A,15}`, `tokens_item_{1,1A,7,8,15}` and
 `tokens_total` (characters ÷ 4), `gc_keyword_items` (Items containing
 "going concern", `;`-separated), `fallback_read` (no auditor's report
-located, see below), `item1a_changed_share`, then
+located, see below), `no_report` (no audit opinion text in Items 8 and 15
+at all), `item1a_changed_share`, then
 `next_year_return` and `tail_loss`.
 
 The 10-K is chosen by the period it reports on, never by filing order: a row
@@ -195,6 +196,10 @@ From a corpus record to what the LLM reads:
    reference), both Items are read in full in 6k-token chunks cut between
    lines, and the 10-K is marked `fallback_read`, so its results can be
    shown apart. That is 5.0% of the fiscal 2014–2016 10-Ks in the corpus.
+   When Items 8 and 15 hold no audit opinion text at all ("we have audited",
+   "in our opinion"), the 10-K is also marked `no_report`: nothing is sent to
+   the LLM, and it is left out of the evaluation universe (decision 5.2). The
+   5.0% above counts these 10-Ks too.
 5. `llm/going_concern.py` sends each chunk to the LLM, which returns the
    going-concern passage word for word, then five yes/no facts about it: is it
    the auditor's opinion, about this company, about the fiscal year the 10-K
@@ -319,9 +324,9 @@ remaining criteria. A constant criterion does not break either ranker: it adds
 the same to everyone in SAW and nothing in TOPSIS.
 
 The ablation measures every row on the same companies, the evaluation
-universe: fiscal 2017 and 2018 rows whose 10-K text is in the corpus, less
-those with too few ratios (the auditor's-report condition joins once the text
-layer locates it). Size (bigger is safer) and last year's price move (a rise
+universe: fiscal 2017 and 2018 rows whose 10-K text is in the corpus and
+whose Items 8 and 15 hold audit opinion text, less those with too few ratios.
+Size (bigger is safer) and last year's price move (a rise
 is safer) are ranked beside the layers as baselines that cost nothing; a
 company with no prior-year row, or no market cap, is put in the middle of its
 year. Each ranking is described per test year and pooled, with scores and
@@ -346,7 +351,7 @@ storyline figures carry the report's argument:
 
 | Figure | Shows |
 |---|---|
-| `join_funnel` | Companies and tail losers left at each step, from the clean panel through the ticker and figure links, one row per filer, the 10-K and its text, to Items 1A, 7 and 8 or 15 present |
+| `join_funnel` | Companies and tail losers left at each step, from the clean panel through the ticker and figure links, one row per filer, the 10-K and its text, to Items 1A, 7 and 8 or 15 present and the auditor's opinion text in them |
 | `leverage_tail_loss` | Tail-loss rate by debt-to-equity quintile, cut across the market and within sectors, with negative equity apart; beside it each sector's median debt-to-equity against its tail-loss rate |
 | `section_lengths` | Estimated tokens of Items 1A, 7 and 8 (stubs left out) against the 32,768-token context window, with the share over it |
 | `going_concern_items` | How many 10-Ks have "going concern" in each Item, Items 8 and 15 (statements and auditor's report) set apart |

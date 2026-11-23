@@ -115,6 +115,9 @@ def test_section_facts_come_from_the_selected_10k(by_row: pd.DataFrame) -> None:
     assert novm["tokens_item_1"] == 500
     assert by_row.loc[("ROMO", 2015), "gc_keyword_items"] == "1A;8"
     assert by_row["fallback_read"].notna().equals(by_row["in_corpus"])  # marked per 10-K text
+    assert by_row["no_report"].notna().equals(by_row["in_corpus"])
+    # NOVM 2016's statements are in Item 15, which holds no auditor's report.
+    assert by_row.loc[by_row["no_report"].fillna(False)].index.tolist() == [("NOVM", 2016)]
 
 
 def test_item_1a_change_share_against_the_prior_year(by_row: pd.DataFrame) -> None:

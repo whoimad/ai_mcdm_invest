@@ -13,7 +13,11 @@ and is capped at `CHUNK_CHARS` either way. Some reports in the corpus lost
 their signature in conversion, so a missing date does not drop the report.
 
 When neither Item holds a report, both are read in full, in chunks of up to
-`CHUNK_CHARS` cut between lines, and the 10-K is marked "fallback read".
+`CHUNK_CHARS` cut between lines, and the 10-K is marked "fallback read". When
+neither Item holds any audit opinion text at all (`AUDIT_OPENING`: "we have
+audited", "we have examined", "in our opinion"), there is nothing for the LLM
+to find and the 10-K is also marked "no report" (in the pilot, statements
+incorporated by reference to an exhibit).
 """
 
 import re
@@ -56,10 +60,13 @@ class Chunk:
 
 @dataclass(frozen=True)
 class Located:
-    """The chunks of one 10-K; `fallback_read` when no auditor's report was found."""
+    """The chunks of one 10-K; `fallback_read` when no auditor's report was
+    found, and also `no_report` when Items 8 and 15 hold no audit opinion text
+    at all (then the chunks are not read)."""
 
     chunks: tuple[Chunk, ...]
     fallback_read: bool
+    no_report: bool = False
 
 
 def locate_auditor_reports(sections: dict[str, str]) -> Located:
@@ -75,7 +82,8 @@ def locate_auditor_reports(sections: dict[str, str]) -> Located:
         for item in REPORT_ITEMS
         for piece in _split_between_lines(sections.get(item, ""))
     ]
-    return Located(tuple(chunks), fallback_read=True)
+    no_report = not any(AUDIT_OPENING.search(sections.get(item, "")) for item in REPORT_ITEMS)
+    return Located(tuple(chunks), fallback_read=True, no_report=no_report)
 
 
 def _report_spans(text: str) -> list[tuple[int, int]]:

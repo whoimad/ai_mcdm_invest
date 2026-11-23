@@ -167,28 +167,32 @@ def test_every_row_of_the_ablation_is_measured_on_the_same_companies() -> None:
     assert set(pooled["companies"]) == {20}
 
 
-def test_the_universe_is_test_year_companies_with_a_10k_text_and_enough_ratios() -> None:
+def test_the_universe_is_test_year_rows_with_10k_text_an_audit_opinion_and_enough_ratios() -> None:
     keys = pd.DataFrame(
         {
-            "cik": [1, 2, 3, 4, 1],
-            "fiscal_year": [2017, 2017, 2018, 2018, 2016],
-            "ticker": ["A", "B", "C", "D", "A"],
+            "cik": [1, 2, 3, 4, 1, 5],
+            "fiscal_year": [2017, 2017, 2018, 2018, 2016, 2018],
+            "ticker": ["A", "B", "C", "D", "A", "E"],
         }
     )
-    joined = keys.assign(next_year_return=[5.0, 1.0, -9.0, 2.0, 4.0], tail_loss=False)
+    joined = keys.assign(next_year_return=[5.0, 1.0, -9.0, 2.0, 4.0, 3.0], tail_loss=False)
     criteria = keys.assign(
         sector="Technology",
-        roe_score=[0.9, 0.1, 0.5, 0.4, 0.3],
-        too_few_ratios=[False, False, True, False, False],
+        roe_score=[0.9, 0.1, 0.5, 0.4, 0.3, 0.7],
+        too_few_ratios=[False, False, True, False, False, False],
     )
-    filings = keys.assign(in_corpus=[True, False, True, True, True])
+    filings = keys.assign(
+        in_corpus=[True, False, True, True, True, True],
+        no_report=pd.array([False, pd.NA, False, False, False, True], dtype="boolean"),
+    )
     rows = baselines(joined.assign(**{"Market Cap": 1e9}))
     # The ML model scores test years only.
-    ml = keys[keys["fiscal_year"] >= 2017].assign(ml_risk_score=[0.2, 0.8, 0.6, 0.4])
+    ml = keys[keys["fiscal_year"] >= 2017].assign(ml_risk_score=[0.2, 0.8, 0.6, 0.4, 0.5])
 
     table = evaluation_universe(joined, criteria, filings, rows, ml)
 
-    # B has no 10-K text, C too few ratios, and A's fiscal 2016 is a training year.
+    # B has no 10-K text, C too few ratios, A's fiscal 2016 is a training year,
+    # and E's Items 8 and 15 hold no audit opinion text.
     assert table["ticker"].tolist() == ["A", "D"]
     assert table["roe_score"].tolist() == [0.9, 0.4]
     assert table["ml_risk_score"].tolist() == [0.2, 0.4]

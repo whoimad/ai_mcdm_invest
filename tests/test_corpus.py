@@ -68,6 +68,20 @@ def test_a_10k_without_a_located_auditors_report_is_marked_fallback_read() -> No
     assert describe_record(without)["fallback_read"]
 
 
+def test_a_10k_without_any_audit_opinion_text_is_marked_no_report() -> None:
+    unheaded = "Item 8.\nWe have audited the balance sheets of Alfa Corp.\n"
+    with_text = {"cik": "1000", "year": "2015", "section_8": unheaded, "section_15": ""}
+    without = {
+        "cik": "1000",
+        "year": "2015",
+        "section_8": "Item 8. See Exhibit 13.",
+        "section_15": "",
+    }
+
+    assert not describe_record(with_text)["no_report"]
+    assert describe_record(without)["no_report"]
+
+
 def test_missing_corpus_folder_says_how_to_fetch(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="make fetch"):
         load_corpus(tmp_path / "nowhere", {1000})

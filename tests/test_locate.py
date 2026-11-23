@@ -139,3 +139,16 @@ def test_heading_variants_seen_in_filings_are_found(heading: str) -> None:
 
     assert not located.fallback_read
     assert located.chunks[0].text == f"{heading}\n{OPINION}{SIGNATURE}".rstrip("\n")
+
+
+def test_items_8_and_15_without_any_audit_opinion_text_hold_no_report() -> None:
+    by_reference = "Item 8. The financial statements are incorporated by reference to Exhibit 13.\n"
+    # A fallback read whose text still holds an opinion: read in full, but a report.
+    unheaded = f"Item 8.\nTo the Board of Directors.\n{OPINION}{SIGNATURE}"
+
+    assert locate_auditor_reports({"8": by_reference, "15": "Item 15. Exhibits\n"}).no_report
+    assert locate_auditor_reports({"1": "Item 1. Business."}).no_report
+    with_fallback = locate_auditor_reports({"8": unheaded})
+    assert with_fallback.fallback_read
+    assert not with_fallback.no_report
+    assert not locate_auditor_reports({"8": f"Item 8.\n{report()}"}).no_report

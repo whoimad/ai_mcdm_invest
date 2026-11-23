@@ -32,7 +32,10 @@ def report(company: str, body: str = "The statements present fairly.") -> str:
 SECTIONS = {
     (1, 2015): {"8": report("Alfa", DOUBT)},
     (2, 2015): {"8": report("Bravo")},
-    (2, 2016): {"8": "Financial statements with no auditor's report.", "15": "Exhibits."},
+    # No report heading, but an opinion: a fallback read, read in full.
+    (2, 2016): {"8": "We have audited the balance sheets of Bravo.", "15": "Exhibits."},
+    # No audit opinion text at all: "no report", never sent to the model.
+    (6, 2015): {"8": "Incorporated by reference to Exhibit 13.", "15": "Exhibits."},
     (3, 2015): {"8": report("Charlie")},
     (4, 2017): {"8": report("Delta")},
 }
@@ -47,6 +50,7 @@ def filings_table() -> pd.DataFrame:
         (3, 2015, True),  # too few ratios: not in the evaluation universe
         (4, 2017, True),  # a test year: never read here
         (5, 2015, False),  # no 10-K text
+        (6, 2015, True),
     ]
     return pd.DataFrame(
         {
@@ -107,6 +111,7 @@ def test_reads_training_year_filings_in_the_evaluation_universe(tmp_path: Path) 
         (1, 2015),
         (2, 2015),
         (2, 2016),
+        (6, 2015),
     }
 
 
@@ -119,6 +124,19 @@ def test_each_filing_gets_its_status_and_fallback_read_mark(tmp_path: Path) -> N
     assert by_filing.loc[(2, 2016), "status"] == "clear"
     assert not by_filing.loc[(1, 2015), "fallback_read"]
     assert by_filing.loc[(2, 2016), "fallback_read"]
+
+
+def test_a_filing_without_audit_opinion_text_is_no_report_and_never_read(
+    tmp_path: Path,
+) -> None:
+    client = FakeClient()
+    filings, chunks = run(tmp_path, client)
+
+    no_report = filings.set_index(["cik", "fiscal_year"]).loc[(6, 2015)]
+    assert no_report["status"] == "no_report"
+    assert no_report["chunks"] == 0
+    assert not any("Exhibit 13" in prompt for prompt in client.prompts)
+    assert 6 not in set(chunks["cik"])
 
 
 def test_chunks_keep_the_quote_and_every_extracted_field(tmp_path: Path) -> None:
@@ -139,13 +157,15 @@ def test_counts_statuses_and_seconds_per_filing_by_year(tmp_path: Path) -> None:
 
     counts = run_counts(filings).set_index("fiscal_year")
     assert counts.loc[2015, ["filings", "flagged", "clear", "extraction_failed"]].tolist() == [
-        2,
+        3,
         1,
         1,
         0,
     ]
+    assert counts.loc[2015, "no_report"] == 1
+    assert counts.loc[2015, "fallback_read"] == 0  # a "no report" filing is not one
     assert counts.loc[2016, "fallback_read"] == 1
-    assert counts.loc["all", "filings"] == 3
+    assert counts.loc["all", "filings"] == 4
     assert counts.loc["all", "seconds_per_filing"] >= 0
 
 
@@ -157,12 +177,12 @@ def test_a_killed_run_resumes_without_rereading_finished_filings(tmp_path: Path)
     resumed = FakeClient()
     filings, _ = run(tmp_path, resumed)
 
-    assert len(filings) == 3
+    assert len(filings) == 4
     # Two chunks were answered before the kill; only the rest are read again.
     assert set(resumed.prompts).isdisjoint(killed.prompts)
     assert len(killed.prompts) + len(resumed.prompts) == 4
     # Seconds are kept from the run that read the filing.
-    assert filings["seconds"].notna().all()
+    assert filings.loc[filings["status"] != "no_report", "seconds"].notna().all()
 
 
 def test_a_pilot_reads_a_fixed_sample_of_filings(tmp_path: Path) -> None:

@@ -59,7 +59,9 @@ EDGAR-CORPUS (`raw/edgar_corpus/<label>_train.jsonl`) holds one record per
   2016, as the real corpus does for some retailers), so picking by label
   would take the wrong filing.
 - PAPA's fiscal 2015 10-K is missing, so fiscal 2016 has no prior Item 1A.
-- NOVM 2016: Item 1A reads "Not applicable." and Item 8 points to Item 15.
+- NOVM 2016: Item 1A reads "Not applicable." and Item 8 points to Item 15,
+  which holds no auditor's report: "no report", out of the evaluation universe.
+- Every other Item 8 opens with an auditor's report.
 - ROMO 2015: going-concern wording in Items 1A and 8.
 - KILO 2016: one of its four Item 1A paragraphs is new and one is reworded
   in one sentence of three; KILO keeps that text afterwards.
@@ -348,6 +350,10 @@ def corpus_record(ticker: str, year: int) -> dict:
     if (ticker, year) == ("ROMO", 2015):
         risks = [*risks, GOING_CONCERN_RISK]
     item_8 = (
+        "Report of Independent Registered Public Accounting Firm\n"
+        f"We have audited the balance sheets of {ticker} Corp. In our opinion, they "
+        "present fairly, in all material respects, its financial position.\n"
+        "/s/ Smith & Jones LLP\n"
         f"Consolidated balance sheets as of {now} and {before}. "
         f"Statements of operations for the years ended {now} and {before}. "
         f"Statement of cash flows for the year ended {now}."

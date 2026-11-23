@@ -54,22 +54,27 @@ def evaluation_universe(
     ml_criterion: pd.DataFrame,
 ) -> pd.DataFrame:
     """The companies every layer is measured on (decision 5.2): test-year rows
-    whose 10-K text is in the corpus and that report at least half the ratios.
+    whose 10-K text is in the corpus, whose Items 8 and 15 hold audit opinion
+    text (not `no_report`), and that report at least half the ratios.
 
     One row per filer and test year, with its ticker, ratio scores,
-    `ml_risk_score`, baselines, `next_year_return` and `tail_loss`. (The
-    auditor's-report condition joins once the text layer locates it.)
+    `ml_risk_score`, baselines, `next_year_return` and `tail_loss`.
     """
     scores = criteria.drop(columns=["ticker", "sector"])
     table = (
         joined[[*KEY, "ticker", "next_year_return", "tail_loss"]]
         .merge(scores, on=KEY, validate="one_to_one")
-        .merge(filings[[*KEY, "in_corpus"]], on=KEY, validate="one_to_one")
+        .merge(filings[[*KEY, "in_corpus", "no_report"]], on=KEY, validate="one_to_one")
         .merge(baseline_table.drop(columns="ticker"), on=KEY, validate="one_to_one")
         .merge(ml_criterion[[*KEY, ML_SCORE_COLUMN]], on=KEY, how="left", validate="one_to_one")
     )
-    kept = table["fiscal_year"].isin(TEST_YEARS) & table["in_corpus"] & ~table["too_few_ratios"]
-    return table[kept].drop(columns="in_corpus").reset_index(drop=True)
+    kept = (
+        table["fiscal_year"].isin(TEST_YEARS)
+        & table["in_corpus"]
+        & ~table["no_report"].fillna(True).astype(bool)
+        & ~table["too_few_ratios"]
+    )
+    return table[kept].drop(columns=["in_corpus", "no_report"]).reset_index(drop=True)
 
 
 def ablation_table(universe: pd.DataFrame, directions: pd.DataFrame) -> pd.DataFrame:

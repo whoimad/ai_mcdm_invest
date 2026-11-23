@@ -86,7 +86,8 @@ def join_funnel(
     joined: pd.DataFrame,
     filings: pd.DataFrame,
 ) -> ReportFigure:
-    """Companies and tail losers left at each step from the panel to the needed 10-K Items."""
+    """Companies and tail losers left at each step from the panel to the needed
+    10-K Items and the auditor's opinion."""
     steps = join_steps(clean, links, joined).groupby("step", sort=False).sum()
     has_10k = filings["filing_date"].notna()
     in_corpus = filings["in_corpus"].astype(bool)
@@ -95,6 +96,9 @@ def join_funnel(
         & filings["has_item_7"].fillna(False)
         & (filings["has_item_8"].fillna(False) | filings["has_item_15"].fillna(False))
     ).astype(bool)
+    # Decision 5.2: a 10-K whose Items 8 and 15 hold no audit opinion text
+    # ("no report") is left out of the evaluation universe.
+    has_report = has_items & ~filings["no_report"].fillna(True).astype(bool)
 
     def counted(rows: pd.Series) -> pd.Series:
         return pd.Series(
@@ -110,11 +114,12 @@ def join_funnel(
             "10-K for the fiscal year found": counted(has_10k),
             "10-K text in the corpus": counted(in_corpus),
             "Items 1A, 7 and 8 or 15 present": counted(has_items),
+            "Audit opinion text in Item 8 or 15": counted(has_report),
         }
     ).T
     share = funnel / funnel.iloc[0]
 
-    figure = new_figure(clean, figsize=(7.5, 4.4))
+    figure = new_figure(clean, figsize=(7.5, 4.7))
     ax = figure.add_subplot()
     y = np.arange(len(funnel))
     height = 0.38
@@ -159,6 +164,8 @@ def join_funnel(
         f"of companies but {share.iloc[1]['tail_losers']:.0%} of tail losers; matching "
         f"reported figures to SEC XBRL data raises this to "
         f"{share.iloc[2]['companies']:.0%} and {share.iloc[2]['tail_losers']:.0%}. "
+        f"The last step drops 10-Ks whose Items 8 and 15 hold no audit opinion text, "
+        f"which the evaluation leaves out. "
         f"n = {total['companies']:,} company-years ({total['tail_losers']:,} tail losers). "
         f"Source: {KAGGLE}; {SEC}; {CORPUS}."
     )

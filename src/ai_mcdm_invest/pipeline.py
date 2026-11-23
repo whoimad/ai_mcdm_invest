@@ -16,7 +16,7 @@ from ai_mcdm_invest.data.join_report import (
 )
 from ai_mcdm_invest.data.joined import join_panel
 from ai_mcdm_invest.data.links import link_companies, load_ticker_ciks, load_xbrl_figures
-from ai_mcdm_invest.data.panel import clean_panel, load_raw_panel
+from ai_mcdm_invest.data.panel import TEST_YEARS, clean_panel, load_raw_panel
 from ai_mcdm_invest.data.raw_manifest import load_manifest, verify_raw_files
 from ai_mcdm_invest.data.submissions import load_submissions
 from ai_mcdm_invest.data.worked_example import worked_example_passages
@@ -71,6 +71,7 @@ def run(settings: Settings) -> None:
     path = write_table(filings, settings.processed_dir, "filings")
     print(f"filings table: {len(filings)} rows, written to {path}")
     print(_filing_counts(filings).to_string())
+    print(_no_report_line(filings))
 
     directions = learn_directions(joined)
     path = write_table(directions, settings.processed_dir, "criterion_directions")
@@ -165,14 +166,34 @@ def _ablation_summary(ablation: pd.DataFrame) -> pd.DataFrame:
 
 
 def _filing_counts(filings: pd.DataFrame) -> pd.DataFrame:
-    """Rows per fiscal year with a 10-K, with its text, and with Items 1A, 7 and 8."""
+    """Rows per fiscal year with a 10-K, with its text, and with Items 1A, 7 and
+    8; then the 10-Ks with no audit opinion text ("no report", left out of the
+    evaluation universe), with their tail losers."""
     has_items = filings[["has_item_1A", "has_item_7", "has_item_8"]].fillna(False).all(axis=1)
+    no_report = filings["no_report"].fillna(False).astype(bool)
     counts = filings.assign(
         rows=1,
         has_10k=filings["filing_date"].notna(),
         items_1a_7_8=has_items,
+        no_report=no_report,
+        no_report_tail_losers=no_report & filings["tail_loss"].astype(bool),
     )
-    return counts.groupby("fiscal_year")[["rows", "has_10k", "in_corpus", "items_1a_7_8"]].sum()
+    columns = ["rows", "has_10k", "in_corpus", "items_1a_7_8", "no_report", "no_report_tail_losers"]
+    return counts.groupby("fiscal_year")[columns].sum()
+
+
+def _no_report_line(filings: pd.DataFrame) -> str:
+    """The training-year 10-Ks in the corpus with no audit opinion text (left
+    out of the evaluation universe, decision 5.2) and their tail-loss rate,
+    against that of every training-year 10-K in the corpus."""
+    in_corpus = filings[~filings["fiscal_year"].isin(TEST_YEARS) & filings["in_corpus"]]
+    no_report = in_corpus[in_corpus["no_report"].astype(bool)]
+    years = f"fiscal {in_corpus['fiscal_year'].min()}-{in_corpus['fiscal_year'].max()}"
+    return (
+        f"no report, {years}: {len(no_report)} of {len(in_corpus)} 10-Ks in the corpus, "
+        f"tail-loss rate {no_report['tail_loss'].mean():.1%} "
+        f"against {in_corpus['tail_loss'].mean():.1%} overall"
+    )
 
 
 def main() -> None:

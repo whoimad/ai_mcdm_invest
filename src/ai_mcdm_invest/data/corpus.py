@@ -37,6 +37,7 @@ FACT_DTYPES = (
     {f"has_item_{item}": "boolean" for item in PRESENCE_ITEMS}
     | {f"tokens_item_{item}": "Int64" for item in TOKEN_ITEMS}
     | {"tokens_total": "Int64", "gc_keyword_items": "string", "fallback_read": "boolean"}
+    | {"no_report": "boolean"}
 )
 
 # A section is a stub, and counts as absent, when what is left after its
@@ -86,7 +87,8 @@ def load_corpus(corpus_dir: Path, ciks: set[int]) -> pd.DataFrame:
     from the text; empty when the text names no date), `has_item_<Item>` for
     `PRESENCE_ITEMS`, `tokens_item_<Item>` for `TOKEN_ITEMS`, `tokens_total`,
     `gc_keyword_items` (Items with going-concern wording, `;`-separated),
-    `fallback_read` (no auditor's report located, see `llm/locate.py`) and
+    `fallback_read` (no auditor's report located, see `llm/locate.py`),
+    `no_report` (no audit opinion text in Items 8 and 15 at all) and
     `item1a_paragraphs` (each Item 1A paragraph as a tuple of sentence
     fingerprints, for year-on-year comparison).
     """
@@ -174,7 +176,9 @@ def describe_record(record: dict) -> dict:
     facts["gc_keyword_items"] = ";".join(
         item for item, text in sections.items() if GOING_CONCERN.search(text)
     )
-    facts["fallback_read"] = locate_auditor_reports(sections).fallback_read
+    located = locate_auditor_reports(sections)
+    facts["fallback_read"] = located.fallback_read
+    facts["no_report"] = located.no_report
     item_1a = sections.get("1A", "")
     facts["item1a_paragraphs"] = (
         tuple(_paragraph_fingerprints(item_1a)) if facts["has_item_1A"] else ()

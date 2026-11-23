@@ -30,13 +30,16 @@ from ai_mcdm_invest.llm.going_concern import (
     filing_status,
     write_whole,
 )
-from ai_mcdm_invest.llm.locate import locate_auditor_reports
+from ai_mcdm_invest.llm.locate import Located, locate_auditor_reports
 from ai_mcdm_invest.llm.ollama import OllamaClient
 from ai_mcdm_invest.tables import write_table
 
 TRAINING_YEARS = [year for year in FISCAL_YEARS if year not in TEST_YEARS]
 SAMPLE_SEED = 0
 KEY = ["cik", "fiscal_year"]
+# Items 8 and 15 hold no audit opinion text at all: nothing is sent to the model,
+# and the filing is left out of the evaluation universe (decision 5.2).
+NO_REPORT = "no_report"
 
 # (cik, corpus_year) -> the record's Item texts ("8" -> text).
 SectionsLoader = Callable[[set[tuple[int, int]]], Iterable[tuple[tuple[int, int], dict[str, str]]]]
@@ -58,38 +61,44 @@ def training_run(
     records asked for. `limit` reads a fixed random sample of that many filings.
 
     Returns one row per filing (`cik`, `fiscal_year`, `accession`, `status`,
-    `fallback_read`, `chunks`, `seconds`) and one row per chunk (the filing's
-    key, then the extraction's result, see `extract_going_concern`). `seconds`
+    `fallback_read`, `chunks`, `seconds`; a filing whose Items 8 and 15 hold no
+    audit opinion text has status `NO_REPORT`, no chunks and no seconds) and
+    one row per chunk (the filing's key, then the extraction's result, see
+    `extract_going_concern`). `seconds`
     is the time the model took on the filing, kept from the run that read it.
     """
     selected = _universe(filings, criteria)
     if limit is not None:
         selected = selected.sample(n=min(limit, len(selected)), random_state=SAMPLE_SEED)
-    chunks, fallback = _chunks(selected, load_sections)
+    chunks, located = _chunks(selected, load_sections)
 
     counting = _CountingClient(client)
     rows = []
+    seconds = {}
     for accession, filing_chunks in chunks.groupby("filing_id", sort=False):
         calls = counting.calls
         start = time.perf_counter()
         rows.append(extract_going_concern(filing_chunks, counting, store_dir))
         elapsed = time.perf_counter() - start
         asked = counting.calls > calls
-        rows[-1]["seconds"] = _seconds(store_dir, str(accession), elapsed, asked)
+        seconds[accession] = _seconds(store_dir, str(accession), elapsed, asked)
 
-    chunk_results = pd.concat(rows, ignore_index=True)
-    seconds = chunk_results.groupby("filing_id", sort=False)["seconds"].first()
-    chunk_results = chunk_results.drop(columns="seconds")
+    chunk_results = pd.concat(rows, ignore_index=True) if rows else _no_chunk_results()
+    accessions = [accession for accession in selected["accession"] if accession in located]
+    no_report = pd.Series({accession: located[accession].no_report for accession in accessions})
+    status = (
+        filing_status(chunk_results).reindex(accessions).astype(object).mask(no_report, NO_REPORT)
+    )
     keys = selected.set_index("accession")[KEY]
     filing_results = (
-        filing_status(chunk_results)
-        .rename_axis("accession")
+        status.rename_axis("accession")
+        .rename("status")
         .to_frame()
         .join(keys)
         .assign(
-            fallback_read=lambda table: table.index.map(fallback),
-            chunks=chunk_results.groupby("filing_id").size(),
-            seconds=seconds,
+            fallback_read=lambda table: [located[a].fallback_read for a in table.index],
+            chunks=chunk_results.groupby("filing_id").size().reindex(accessions, fill_value=0),
+            seconds=pd.Series(seconds, dtype=float).reindex(accessions),
         )
         .reset_index()[[*KEY, "accession", "status", "fallback_read", "chunks", "seconds"]]
     )
@@ -103,7 +112,8 @@ def training_run(
 
 def run_counts(filing_results: pd.DataFrame) -> pd.DataFrame:
     """Per fiscal year and for all years: filings, flagged, clear, failed and
-    fallback-read counts, and the mean seconds per filing."""
+    "no report" counts, the fallback reads that were read (a "no report" filing
+    is not), and the mean seconds per filing read."""
 
     def counts(table: pd.DataFrame) -> dict:
         return {
@@ -111,7 +121,8 @@ def run_counts(filing_results: pd.DataFrame) -> pd.DataFrame:
             FLAGGED: int((table["status"] == FLAGGED).sum()),
             CLEAR: int((table["status"] == CLEAR).sum()),
             FAILED: int((table["status"] == FAILED).sum()),
-            "fallback_read": int(table["fallback_read"].sum()),
+            NO_REPORT: int((table["status"] == NO_REPORT).sum()),
+            "fallback_read": int((table["fallback_read"] & (table["status"] != NO_REPORT)).sum()),
             "seconds_per_filing": round(float(table["seconds"].mean()), 2),
         }
 
@@ -125,7 +136,8 @@ def run_counts(filing_results: pd.DataFrame) -> pd.DataFrame:
 
 def _universe(filings: pd.DataFrame, criteria: pd.DataFrame) -> pd.DataFrame:
     """Training-year 10-Ks with text in the corpus and at least half the ratios
-    (the evaluation universe's rule, decision 5.2, on the training years)."""
+    (the evaluation universe's rule, decision 5.2, on the training years). "No
+    report" 10-Ks are kept here so the run counts them, but are not read."""
     table = filings.merge(criteria[[*KEY, "too_few_ratios"]], on=KEY, validate="one_to_one")
     kept = (
         table["fiscal_year"].isin(TRAINING_YEARS)
@@ -137,9 +149,9 @@ def _universe(filings: pd.DataFrame, criteria: pd.DataFrame) -> pd.DataFrame:
 
 def _chunks(
     selected: pd.DataFrame, load_sections: SectionsLoader
-) -> tuple[pd.DataFrame, dict[str, bool]]:
-    """The located chunks of every selected filing, in the order selected, and
-    whether each filing was a fallback read."""
+) -> tuple[pd.DataFrame, dict[str, Located]]:
+    """The chunks the model reads, in the order selected, and what was located
+    in each selected filing. A "no report" filing has no chunks to read."""
     records = selected.to_dict("records")
     accessions = {(int(row["cik"]), int(row["corpus_year"])): row["accession"] for row in records}
     located = {}
@@ -154,11 +166,15 @@ def _chunks(
             "text": chunk.text,
         }
         for row in records
-        if row["accession"] in located
+        if row["accession"] in located and not located[row["accession"]].no_report
         for number, chunk in enumerate(located[row["accession"]].chunks)
     ]
-    fallback = {accession: found.fallback_read for accession, found in located.items()}
-    return pd.DataFrame(rows), fallback
+    return pd.DataFrame(rows, columns=["filing_id", "period_end", "chunk", "item", "text"]), located
+
+
+def _no_chunk_results() -> pd.DataFrame:
+    """The chunk results when every selected filing is "no report"."""
+    return pd.DataFrame(columns=["filing_id", "status"])
 
 
 def _seconds(store_dir: Path, accession: str, elapsed: float, asked: bool) -> float:
