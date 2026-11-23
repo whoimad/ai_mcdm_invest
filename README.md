@@ -195,11 +195,12 @@ From a corpus record to what the LLM reads:
 4. When no report is found (asset-backed trusts, statements incorporated by
    reference), both Items are read in full in 6k-token chunks cut between
    lines, and the 10-K is marked `fallback_read`, so its results can be
-   shown apart. That is 5.0% of the fiscal 2014–2016 10-Ks in the corpus.
-   When Items 8 and 15 hold no audit opinion text at all ("we have audited",
-   "in our opinion"), the 10-K is also marked `no_report`: nothing is sent to
-   the LLM, and it is left out of the evaluation universe (decision 5.2). The
-   5.0% above counts these 10-Ks too.
+   shown apart. When Items 8 and 15 hold no audit opinion text at all ("we
+   have audited", "in our opinion"), the 10-K is also marked `no_report`:
+   nothing is sent to the LLM, and it is left out of the evaluation universe
+   (decision 5.2). Of the 8,926 fiscal 2014–2016 10-Ks in the corpus, 263
+   (2.9%) are `no_report`, and 121 (1.4%) are fallback reads that hold
+   opinion text and are read in full.
 5. `llm/going_concern.py` sends each chunk to the LLM, which returns the
    going-concern passage word for word, then five yes/no facts about it: is it
    the auditor's opinion, about this company, about the fiscal year the 10-K
@@ -283,15 +284,15 @@ which also fed it sector and last year's price move, scored 0.813 and 0.796.
 `make test-slow` checks the rewrite stays within 0.01 of 0.81 and 0.80.
 
 First result of adding the ML layer (exploratory; pooled 2017–2018, SAW,
-6,700 companies):
+6,530 companies):
 
 | Profile | Tail-loss AUC, ratios only | Tail-loss AUC, + ML | Tail losers in the safest fifth, ratios only → + ML |
 |---|---|---|---|
-| Balanced | 0.707 | 0.750 | 10.0% → 4.6% |
-| Risk-averse | 0.709 | 0.778 | 7.9% → 2.0% |
-| Value-minded | 0.700 | 0.740 | 11.8% → 7.0% |
+| Balanced | 0.705 | 0.748 | 10.3% → 5.0% |
+| Risk-averse | 0.706 | 0.775 | 8.2% → 2.3% |
+| Value-minded | 0.699 | 0.738 | 11.9% → 7.1% |
 
-The baselines score 0.706 (size) and 0.621 (last year's price move).
+The baselines score 0.707 (size) and 0.622 (last year's price move).
 
 `ml_risk_score` is the probability's percentile within the fiscal year over
 the joined panel, as the ratio scores are, oriented so that higher is safer.

@@ -165,7 +165,9 @@ def join_funnel(
         f"reported figures to SEC XBRL data raises this to "
         f"{share.iloc[2]['companies']:.0%} and {share.iloc[2]['tail_losers']:.0%}. "
         f"The last step drops 10-Ks whose Items 8 and 15 hold no audit opinion text, "
-        f"which the evaluation leaves out. "
+        f"which the evaluation leaves out. The evaluation universe is not this last "
+        f"step: it does not need Items 1A, 7 and 8 or 15, but needs at least half the "
+        f"ratios. "
         f"n = {total['companies']:,} company-years ({total['tail_losers']:,} tail losers). "
         f"Source: {KAGGLE}; {SEC}; {CORPUS}."
     )
