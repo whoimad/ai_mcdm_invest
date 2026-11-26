@@ -191,3 +191,19 @@ def test_a_pilot_reads_a_fixed_sample_of_filings(tmp_path: Path) -> None:
 
     assert len(first) == 2
     assert first["accession"].tolist() == second["accession"].tolist()
+
+
+def test_keyword_flags_are_stored_beside_the_llms(tmp_path: Path) -> None:
+    filings, chunks = run(tmp_path)
+
+    by_filing = filings.set_index(["cik", "fiscal_year"])
+    assert by_filing["keyword_flagged"].to_dict() == {
+        (1, 2015): True,
+        (2, 2015): False,
+        (2, 2016): False,
+        (6, 2015): False,  # "no report": nothing is read
+    }
+    assert (filings["keyword_version"] == "kw-1").all()
+    alfa = chunks[chunks["cik"] == 1].iloc[0]
+    assert alfa["keyword_match"] == DOUBT
+    assert chunks.loc[chunks["cik"] == 2, "keyword_match"].isna().all()

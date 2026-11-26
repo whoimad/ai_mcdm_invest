@@ -30,6 +30,7 @@ from ai_mcdm_invest.llm.going_concern import (
     filing_status,
     write_whole,
 )
+from ai_mcdm_invest.llm.keyword_benchmark import KEYWORD_VERSION, keyword_match
 from ai_mcdm_invest.llm.locate import Located, locate_auditor_reports
 from ai_mcdm_invest.llm.ollama import OllamaClient
 from ai_mcdm_invest.tables import write_table
@@ -61,11 +62,13 @@ def training_run(
     records asked for. `limit` reads a fixed random sample of that many filings.
 
     Returns one row per filing (`cik`, `fiscal_year`, `accession`, `status`,
-    `fallback_read`, `chunks`, `seconds`; a filing whose Items 8 and 15 hold no
-    audit opinion text has status `NO_REPORT`, no chunks and no seconds) and
-    one row per chunk (the filing's key, then the extraction's result, see
-    `extract_going_concern`). `seconds`
-    is the time the model took on the filing, kept from the run that read it.
+    `fallback_read`, `chunks`, `seconds`, `keyword_flagged`, `keyword_version`;
+    a filing whose Items 8 and 15 hold no audit opinion text has status
+    `NO_REPORT`, no chunks, no seconds and `keyword_flagged` false) and one row per
+    chunk (the filing's key, then the extraction's result, see
+    `extract_going_concern`, then `keyword_match`, the sentence the keyword
+    benchmark flags in the same chunk, if any). `seconds` is the time the model
+    took on the filing, kept from the run that read it.
     """
     selected = _universe(filings, criteria)
     if limit is not None:
@@ -84,6 +87,12 @@ def training_run(
         seconds[accession] = _seconds(store_dir, str(accession), elapsed, asked)
 
     chunk_results = pd.concat(rows, ignore_index=True) if rows else _no_chunk_results()
+    keyword = chunks[["filing_id", "chunk"]].assign(
+        keyword_match=chunks["text"].map(keyword_match).astype(object)
+    )
+    chunk_results = chunk_results.merge(
+        keyword, on=["filing_id", "chunk"], how="left", validate="one_to_one"
+    )
     accessions = [accession for accession in selected["accession"] if accession in located]
     no_report = pd.Series({accession: located[accession].no_report for accession in accessions})
     status = (
@@ -99,8 +108,25 @@ def training_run(
             fallback_read=lambda table: [located[a].fallback_read for a in table.index],
             chunks=chunk_results.groupby("filing_id").size().reindex(accessions, fill_value=0),
             seconds=pd.Series(seconds, dtype=float).reindex(accessions),
+            keyword_flagged=chunk_results["keyword_match"]
+            .notna()
+            .groupby(chunk_results["filing_id"])
+            .any()
+            .reindex(accessions, fill_value=False),
+            keyword_version=KEYWORD_VERSION,
         )
-        .reset_index()[[*KEY, "accession", "status", "fallback_read", "chunks", "seconds"]]
+        .reset_index()[
+            [
+                *KEY,
+                "accession",
+                "status",
+                "fallback_read",
+                "chunks",
+                "seconds",
+                "keyword_flagged",
+                "keyword_version",
+            ]
+        ]
     )
     chunk_results = (
         chunk_results.rename(columns={"filing_id": "accession"})
@@ -174,7 +200,7 @@ def _chunks(
 
 def _no_chunk_results() -> pd.DataFrame:
     """The chunk results when every selected filing is "no report"."""
-    return pd.DataFrame(columns=["filing_id", "status"])
+    return pd.DataFrame(columns=["filing_id", "chunk", "status"])
 
 
 def _seconds(store_dir: Path, accession: str, elapsed: float, asked: bool) -> float:

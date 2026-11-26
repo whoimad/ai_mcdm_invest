@@ -232,6 +232,18 @@ one `no_report` 10-K is among the latter. The 118 fallback reads are counted
 inside flagged, clear and failed. Checked by hand, all four flagged fallback
 reads hold a genuine auditor's going-concern paragraph.
 
+The keyword benchmark (`llm/keyword_benchmark.py`, decision 6.6) is the
+non-LLM rival. A strict regex reads the same located chunks one sentence at a
+time. It flags a sentence that says there is substantial doubt about a named
+company's ability to continue as a going concern, unless the sentence uses the
+accounting rule's own wording ("whether", "would", "evaluate", "an entity's").
+It was tuned on fiscal 2014–2016 against the LLM's flags and frozen as `kw-1`.
+Its flags are stored beside the LLM's (`keyword_flagged`, and the matched
+sentence as `keyword_match`). Of the 8,598 flagged or clear 10-Ks, it flags
+316: all 300 the LLM flags, and 16 it does not. It also flags 2 of the 9
+failed 10-Ks. By design it cannot see two traps: a reprinted opinion from an
+earlier year, and another company's doubt.
+
 A located report, shortened (North Texas Energy, fiscal 2016):
 
 ```
