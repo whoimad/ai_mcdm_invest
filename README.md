@@ -196,11 +196,13 @@ From a corpus record to what the LLM reads:
    reference), both Items are read in full in 6k-token chunks cut between
    lines, and the 10-K is marked `fallback_read`, so its results can be
    shown apart. When Items 8 and 15 hold no audit opinion text at all ("we
-   have audited", "in our opinion"), the 10-K is also marked `no_report`:
-   nothing is sent to the LLM, and it is left out of the evaluation universe
-   (decision 5.2). Of the 8,926 fiscal 2014–2016 10-Ks in the corpus, 263
-   (2.9%) are `no_report`, and 121 (1.4%) are fallback reads that hold
-   opinion text and are read in full.
+   have audited", or "in our opinion" followed by "present fairly" in the same
+   sentence), the 10-K is also marked `no_report`: nothing is sent to the LLM,
+   and it is left out of the evaluation universe (decision 5.2). A bare "in our
+   opinion" is not enough, since management writes it too ("In our opinion, we
+   have made adequate provisions for income taxes"). Of the 8,926 fiscal
+   2014–2016 10-Ks in the corpus, 266 (3.0%) are `no_report`, and 118 (1.3%)
+   are fallback reads that hold opinion text and are read in full.
 5. `llm/going_concern.py` sends each chunk to the LLM, which returns the
    going-concern passage word for word, then five yes/no facts about it: is it
    the auditor's opinion, about this company, about the fiscal year the 10-K
@@ -212,6 +214,23 @@ From a corpus record to what the LLM reads:
    failed when any chunk failed, else clear. Every reply is cached by prompt
    version, model version and prompt text, and each finished 10-K leaves a
    marker, so an interrupted run resumes where it stopped.
+
+Training-year run (`python -m ai_mcdm_invest.llm.training_run`): every
+fiscal 2014–2016 10-K that meets the evaluation universe's rule (in the
+corpus, at least half the ratios), read by `qwen2.5:7b` (digest
+`845dbda0ea48`):
+
+| Fiscal year | 10-Ks | Flagged | Clear | Failed | No report | Fallback reads | Seconds per 10-K |
+|---|---|---|---|---|---|---|---|
+| 2014 | 2,750 | 64 | 2,599 | 2 | 85 | 36 | 2.55 |
+| 2015 | 2,989 | 101 | 2,794 | 3 | 91 | 43 | 2.64 |
+| 2016 | 3,133 | 135 | 2,905 | 4 | 89 | 39 | 2.62 |
+| All | 8,872 | 300 | 8,298 | 9 | 265 | 118 | 2.61 |
+
+The 8,872 10-Ks are the 8,926 in the corpus less those with too few ratios;
+one `no_report` 10-K is among the latter. The 118 fallback reads are counted
+inside flagged, clear and failed. Checked by hand, all four flagged fallback
+reads hold a genuine auditor's going-concern paragraph.
 
 A located report, shortened (North Texas Energy, fiscal 2016):
 

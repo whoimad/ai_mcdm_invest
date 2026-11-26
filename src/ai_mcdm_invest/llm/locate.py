@@ -14,10 +14,13 @@ their signature in conversion, so a missing date does not drop the report.
 
 When neither Item holds a report, both are read in full, in chunks of up to
 `CHUNK_CHARS` cut between lines, and the 10-K is marked "fallback read". When
-neither Item holds any audit opinion text at all (`AUDIT_OPENING`: "we have
-audited", "we have examined", "in our opinion"), there is nothing for the LLM
-to find and the 10-K is also marked "no report" (in the pilot, statements
-incorporated by reference to an exhibit).
+neither Item holds any audit opinion text at all (`AUDIT_OPINION_TEXT`: "we
+have audited", "we have examined", or "in our opinion" followed by "present
+fairly" in the same sentence), there is nothing for the LLM to find and the
+10-K is also marked "no report" (in the pilot, statements incorporated by
+reference to an exhibit). A bare "in our opinion" is not enough: management
+writes it too ("In our opinion, we have made adequate provisions for income
+taxes").
 """
 
 import re
@@ -37,7 +40,20 @@ HEADING = re.compile(
     re.IGNORECASE,
 )
 OPENING_CHARS = 1500
-AUDIT_OPENING = re.compile(r"we\s+have\s+(?:audited|examined)|in\s+our\s+opinion", re.IGNORECASE)
+_AUDITED = r"we\s+have\s+(?:audited|examined)"
+# The opening of a report, searched only just after its heading: there a bare
+# "in our opinion" is the auditor's.
+AUDIT_OPENING = re.compile(rf"{_AUDITED}|in\s+our\s+opinion", re.IGNORECASE)
+# Audit opinion text anywhere in Items 8 and 15, for "no report". A bare "in our
+# opinion" may be management's, so it needs "present fairly" in the same
+# sentence. A sentence ends at a period followed by a capital letter, so "Inc."
+# and "U.S." do not end it; a long list of statements can come before the verb.
+OPINION_SENTENCE_CHARS = 1000
+AUDIT_OPINION_TEXT = re.compile(
+    rf"{_AUDITED}|in\s+our\s+opinion(?:[^.]|\.(?!\s+(?-i:[A-Z]))){{0,{OPINION_SENTENCE_CHARS}}}?"
+    r"\bpresents?,?\s+fairly",
+    re.IGNORECASE,
+)
 # The auditor's signature date: a line holding a date, perhaps after the city
 # ("Denver, Colorado, March 14, 2016"), that ends the line or goes on with a
 # second date ("March 14, 2016, except for Note 2, as to which the date is ...").
@@ -82,7 +98,7 @@ def locate_auditor_reports(sections: dict[str, str]) -> Located:
         for item in REPORT_ITEMS
         for piece in _split_between_lines(sections.get(item, ""))
     ]
-    no_report = not any(AUDIT_OPENING.search(sections.get(item, "")) for item in REPORT_ITEMS)
+    no_report = not any(AUDIT_OPINION_TEXT.search(sections.get(item, "")) for item in REPORT_ITEMS)
     return Located(tuple(chunks), fallback_read=True, no_report=no_report)
 
 

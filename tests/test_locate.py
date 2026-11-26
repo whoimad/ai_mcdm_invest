@@ -152,3 +152,30 @@ def test_items_8_and_15_without_any_audit_opinion_text_hold_no_report() -> None:
     assert with_fallback.fallback_read
     assert not with_fallback.no_report
     assert not locate_auditor_reports({"8": f"Item 8.\n{report()}"}).no_report
+
+
+def test_management_saying_in_our_opinion_is_not_audit_opinion_text() -> None:
+    # Seen in the training run: statements incorporated by reference, and only
+    # management's own "In our opinion" left in Item 8.
+    tax_note = (
+        "Item 8. The financial statements are incorporated by reference to Exhibit 13.\n"
+        "Judgment is required in determining our income tax provision. In our opinion, "
+        "we have made adequate provisions for income taxes for all years subject to audit.\n"
+    )
+    # A report that leads with the opinion and has no heading.
+    opinion_first = (
+        "Item 8.\nTo the Board of Directors and Shareholders:\nIn our opinion, the "
+        "accompanying balance sheets and the related statements of operations present "
+        "fairly, in all material respects, the financial position of the Company.\n"
+    )
+
+    # Periods inside the sentence, and a long list of statements before the verb.
+    statements = ", ".join(f"the related consolidated statement number {n}" for n in range(12))
+    with_abbreviations = (
+        "Item 8.\nIn our opinion, the balance sheets of Acme Inc. and its U.S. "
+        f"subsidiaries, and {statements}, presents fairly, in all material respects.\n"
+    )
+
+    assert locate_auditor_reports({"8": tax_note}).no_report
+    assert not locate_auditor_reports({"8": opinion_first}).no_report
+    assert not locate_auditor_reports({"8": with_abbreviations}).no_report
