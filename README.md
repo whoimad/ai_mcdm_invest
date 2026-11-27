@@ -24,6 +24,7 @@ uv sync
 | `make fetch` | Downloads the SEC files and the 10-K corpus the rebuild reads, about 16 GB (needs the network; run once) |
 | `make manifest` | Records the raw files the study is built on in `raw_manifest.json` (only to adopt new raw data on purpose) |
 | `make all` | Checks the raw files against `raw_manifest.json`, then rebuilds every derived table and figure, offline |
+| `make results` | After `make all` and the test-year going-concern run: the "+ LLM" ablation row, the three likelihood-ratio tests and the tables beside them, into `data/processed/test_year_*` and `data/reports/test_year_results.md` |
 | `make figures` | Redraws the figures from the tables `make all` wrote, without rebuilding them |
 | `make notebook` | Reruns the data notebook from those tables and figures and saves its outputs; kept out of CI |
 | `make test` | Runs the test suite (needs neither the raw data nor a GPU) |
@@ -232,6 +233,17 @@ one `no_report` 10-K is among the latter. The 118 fallback reads are counted
 inside flagged, clear and failed. Checked by hand, all four flagged fallback
 reads hold a genuine auditor's going-concern paragraph.
 
+Test-year run (`uv run python -m ai_mcdm_invest.llm.test_year_run`): the same
+code, universe rule, locate rule, model and prompt version on fiscal 2017 and
+2018, with `kw-1` on the same located blocks. It refuses to start unless
+`PREREGISTRATION.md` is committed with no uncommitted changes and its last
+commit is on a remote branch; that commit is stored in every row
+(`prereg_commit`) and in `data/reports/going_concern_test_run.md`, beside the
+counts and the list of "extraction failed" 10-Ks. Its store
+(`data/interim/going_concern_test_store`) is apart from the training run's, and
+a killed run resumes only under the same prompt version and model digest.
+Results: `going_concern_test_filings` and `going_concern_test_chunks`.
+
 The keyword benchmark (`llm/keyword_benchmark.py`, decision 6.6) is the
 non-LLM rival. A strict regex reads the same located chunks one sentence at a
 time. It flags a sentence that says there is substantial doubt about a named
@@ -371,7 +383,26 @@ returns ranked within each year first:
 | `rank_correlation` | Rank correlation of the score with the next-year return |
 | `top_minus_bottom_return` | Mean next-year return of the safest fifth minus the riskiest, in percentage points |
 
-So far the ablation has its `ratios only` and `+ ML` rows; the text layer adds its own.
+`make all` writes the `ratios only` and `+ ML` rows. `make results` adds the
+`+ LLM` row once the test-year going-concern run has written its tables: the
+text group's one criterion is the LLM's flag (clear scores 1, flagged 0; a
+failed extraction has no score and is ranked on its other criteria). It is
+written with every row twice (`sample`): on the whole universe and without
+fallback reads, SAW and TOPSIS both.
+
+The primary tests (pre-registration, section 4) are likelihood-ratio tests,
+pooled 2017–2018, at α = 0.05, on the companies whose extraction did not fail.
+Each adds one flag to a logistic model of tail loss on the logit of the ML
+tail-loss probability and a 2018 dummy (each year's ML score comes from its own
+walk-forward model, so each year keeps its own intercept): H1 the LLM flag, H2
+the `kw-1` flag, H3 the LLM flag given the `kw-1` flag. Each gives the LR
+statistic (1 degree of freedom), its p-value and the flag's odds ratio with a
+95% Wald interval (`test_year_tests`). Descriptive only, without intervals: the
+AUC gain of `+ LLM` over `+ ML` (`test_year_auc_gain`), the flagged companies
+already in ML's riskiest fifth (`test_year_riskiest_fifth`), and the filings
+where the LLM and `kw-1` disagree, with both quotes (`test_year_disagreements`,
+the ten ML finds riskiest shown in the summary). Failed extractions are listed
+in `test_year_failed`.
 
 ## Figures
 
@@ -428,7 +459,7 @@ src/ai_mcdm_invest/
   ml/            ML risk score
   llm/           LLM extraction from 10-K filings
   mcdm/          weighted sum, TOPSIS and the weight profiles
-  evaluation/    baselines, evaluation universe and layer ablation
+  evaluation/    baselines, evaluation universe, layer ablation and test-year results
 tests/
   fixtures/      fictional companies with known answers
 notebooks/

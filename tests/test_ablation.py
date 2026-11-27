@@ -198,3 +198,37 @@ def test_the_universe_is_test_year_rows_with_10k_text_an_audit_opinion_and_enoug
     assert table["ml_risk_score"].tolist() == [0.2, 0.4]
     assert table["last_year_return"].tolist()[0] == 4.0
     assert {"next_year_return", "tail_loss", "market_cap"} <= set(table.columns)
+
+
+def test_the_llm_row_adds_the_going_concern_flag_to_the_ratios_and_ml() -> None:
+    # ML ranks everyone alike here; the flag alone lifts the order to perfect.
+    rows = universe().assign(ml_risk_score=0.5)
+    rows["going_concern_score"] = (~rows["tail_loss"]).astype(float)
+
+    table = ablation_table(rows, ROE_ONLY)
+
+    llm = table[table["layer"] == "+ LLM"]
+    assert len(llm) == 3 * 2 * 3
+    assert llm["tail_loss_auc"].tolist() == pytest.approx([1.0] * len(llm))
+    ml = table[table["layer"] == "+ ML"]
+    assert ml["tail_loss_auc"].tolist() == pytest.approx([15 / 16] * len(ml))
+    # It still holds the ML layer, so it is exploratory too.
+    assert llm["exploratory"].all()
+
+
+def test_a_failed_extraction_is_ranked_on_its_other_criteria_not_dropped() -> None:
+    rows = universe()
+    rows["going_concern_score"] = 1.0
+    rows.loc[0, "going_concern_score"] = None
+
+    table = ablation_table(rows, ROE_ONLY)
+
+    pooled = table[table["fiscal_year"] == "pooled"]
+    assert set(pooled["layer"]) >= {"ratios only", "+ ML", "+ LLM"}
+    assert set(pooled["companies"]) == {20}
+
+
+def test_without_going_concern_results_the_ablation_has_no_llm_row() -> None:
+    table = ablation_table(universe(), ROE_ONLY)
+
+    assert "+ LLM" not in set(table["layer"])

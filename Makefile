@@ -1,9 +1,16 @@
-.PHONY: all figures notebook fetch manifest test test-slow lint check
+.PHONY: all results figures notebook fetch manifest test test-slow lint check
 
 # Rebuild every derived table and figure from raw data.
 # Raw data is read from AI_MCDM_RAW_DIR (default: ~/maids/data).
 all:
 	uv run python -m ai_mcdm_invest.pipeline
+
+# The test-year results: the "+ LLM" ablation row, the three likelihood-ratio
+# tests and the tables beside them (PREREGISTRATION.md). Reads the tables
+# `make all` and the test-year going-concern run wrote; stops with a message if
+# the run's tables are missing. Calls no model.
+results:
+	uv run python -m ai_mcdm_invest.evaluation.results
 
 # Redraw the figures from the tables `make all` wrote, without rebuilding them.
 figures:

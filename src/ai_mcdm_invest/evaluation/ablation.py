@@ -16,7 +16,16 @@ MARKET_CAP = "Market Cap"
 # The riskiest and safest fifths: the lowest and highest 20% of scores in a year.
 FIFTH = 0.2
 # The ablation's rows: each switches on one more layer of criteria.
-LAYERS = {"ratios only": {"ratios"}, "+ ML": {"ratios", "ml"}}
+LAYERS = {
+    "ratios only": {"ratios"},
+    "+ ML": {"ratios", "ml"},
+    "+ LLM": {"ratios", "ml", "text"},
+}
+# The text layer's one criterion (pre-registration, section 3): the LLM's
+# going-concern flag, clear 1 and flagged 0, empty when the extraction failed.
+TEXT_LAYER = "text"
+TEXT_SCORE_COLUMN = "going_concern_score"
+TEXT_GROUP = "text"
 # The ML numbers are exploratory (decision 4.8): its settings were never tuned
 # on the test years, but its target and model family were chosen while
 # looking at them.
@@ -87,10 +96,18 @@ def ablation_table(universe: pd.DataFrame, directions: pd.DataFrame) -> pd.DataF
     columns. Rows that include the ML layer are marked `exploratory`. A
     baseline value that is missing scores the middle of its year, as a ratio
     not reported does, so every row is measured on the same companies.
+
+    The "+ LLM" rows appear only when `universe` has `going_concern_score`; a
+    company without one (a failed extraction) is ranked on its other criteria.
     """
     criteria = {**scored_criteria(directions), ML_SCORE_COLUMN: ML_GROUP}
+    has_text = TEXT_SCORE_COLUMN in universe.columns
+    if has_text:
+        criteria[TEXT_SCORE_COLUMN] = TEXT_GROUP
     rankings = []
     for layer, layers in LAYERS.items():
+        if TEXT_LAYER in layers and not has_text:
+            continue
         exploratory = EXPLORATORY_LAYER in layers
         for profile in PROFILES:
             weights = criterion_weights(profile, criteria, layers)
