@@ -55,7 +55,24 @@ def training_run(
     *,
     limit: int | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Read the going-concern facts of every training-year 10-K in the evaluation universe.
+    """Read the going-concern facts of every training-year 10-K in the evaluation
+    universe. See `going_concern_run`."""
+    return going_concern_run(
+        filings, criteria, load_sections, client, store_dir, years=TRAINING_YEARS, limit=limit
+    )
+
+
+def going_concern_run(
+    filings: pd.DataFrame,
+    criteria: pd.DataFrame,
+    load_sections: SectionsLoader,
+    client: LLMClient,
+    store_dir: Path,
+    *,
+    years: Iterable[int],
+    limit: int | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Read the going-concern facts of every 10-K of fiscal `years` in the evaluation universe.
 
     `filings` is the filings table and `criteria` the ratio criteria (for
     `too_few_ratios`). `load_sections` gives the Item texts of the corpus
@@ -70,7 +87,7 @@ def training_run(
     benchmark flags in the same chunk, if any). `seconds` is the time the model
     took on the filing, kept from the run that read it.
     """
-    selected = _universe(filings, criteria)
+    selected = _universe(filings, criteria, years)
     if limit is not None:
         selected = selected.sample(n=min(limit, len(selected)), random_state=SAMPLE_SEED)
     chunks, located = located_chunks(selected, load_sections)
@@ -160,13 +177,13 @@ def run_counts(filing_results: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _universe(filings: pd.DataFrame, criteria: pd.DataFrame) -> pd.DataFrame:
-    """Training-year 10-Ks with text in the corpus and at least half the ratios
-    (the evaluation universe's rule, decision 5.2, on the training years). "No
-    report" 10-Ks are kept here so the run counts them, but are not read."""
+def _universe(filings: pd.DataFrame, criteria: pd.DataFrame, years: Iterable[int]) -> pd.DataFrame:
+    """10-Ks of fiscal `years` with text in the corpus and at least half the ratios
+    (the evaluation universe's rule, decision 5.2). "No report" 10-Ks are kept
+    here so the run counts them, but are not read."""
     table = filings.merge(criteria[[*KEY, "too_few_ratios"]], on=KEY, validate="one_to_one")
     kept = (
-        table["fiscal_year"].isin(TRAINING_YEARS)
+        table["fiscal_year"].isin(list(years))
         & table["in_corpus"].astype(bool)
         & ~table["too_few_ratios"].astype(bool)
     )
