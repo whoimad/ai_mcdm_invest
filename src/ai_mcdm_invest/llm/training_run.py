@@ -73,7 +73,7 @@ def training_run(
     selected = _universe(filings, criteria)
     if limit is not None:
         selected = selected.sample(n=min(limit, len(selected)), random_state=SAMPLE_SEED)
-    chunks, located = _chunks(selected, load_sections)
+    chunks, located = located_chunks(selected, load_sections)
 
     counting = _CountingClient(client)
     rows = []
@@ -173,7 +173,7 @@ def _universe(filings: pd.DataFrame, criteria: pd.DataFrame) -> pd.DataFrame:
     return table[kept].reset_index(drop=True)
 
 
-def _chunks(
+def located_chunks(
     selected: pd.DataFrame, load_sections: SectionsLoader
 ) -> tuple[pd.DataFrame, dict[str, Located]]:
     """The chunks the model reads, in the order selected, and what was located

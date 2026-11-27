@@ -93,13 +93,18 @@ def locate_auditor_reports(sections: dict[str, str]) -> Located:
         chunks += [Chunk(item, text[start:end]) for start, end in _report_spans(text)]
     if chunks:
         return Located(tuple(chunks), fallback_read=False)
-    chunks = [
+    no_report = not any(AUDIT_OPINION_TEXT.search(sections.get(item, "")) for item in REPORT_ITEMS)
+    return Located(read_in_full(sections), fallback_read=True, no_report=no_report)
+
+
+def read_in_full(sections: dict[str, str]) -> tuple[Chunk, ...]:
+    """Items 8 and 15 of a 10-K in full, in chunks of up to `CHUNK_CHARS`: the
+    fallback read, and the gate's measure of what locating misses."""
+    return tuple(
         Chunk(item, piece)
         for item in REPORT_ITEMS
         for piece in _split_between_lines(sections.get(item, ""))
-    ]
-    no_report = not any(AUDIT_OPINION_TEXT.search(sections.get(item, "")) for item in REPORT_ITEMS)
-    return Located(tuple(chunks), fallback_read=True, no_report=no_report)
+    )
 
 
 def _report_spans(text: str) -> list[tuple[int, int]]:
