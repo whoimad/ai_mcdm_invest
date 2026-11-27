@@ -14,7 +14,7 @@ from typing import Any, Protocol
 
 import pandas as pd
 
-PROMPT_VERSION = "gc-1"
+PROMPT_VERSION = "gc-2"
 # The checks a reply must pass. A change rescores finished filings from the
 # cached replies; the model is asked again only where the new checks reject a
 # cached reply, since the retry prompt carries the new rejection message.
@@ -27,7 +27,9 @@ FLAGGED = "flagged"
 CLEAR = "clear"
 FAILED = "extraction_failed"
 
-FIELDS = ["auditor_opinion", "this_company", "current_year", "doubt_expressed", "alleviated"]
+# `alleviated` before `doubt_expressed`: asked after it, the model called doubt
+# that management's plans alleviate expressed (gate run on gc-1).
+FIELDS = ["auditor_opinion", "this_company", "current_year", "alleviated", "doubt_expressed"]
 # The quote comes first: with yes/no fields first, a pre-test model ruled out
 # genuine opinions before reading them.
 SCHEMA = {
@@ -47,9 +49,13 @@ none, return an empty quote and false for every other field.
 Then answer about the quoted passage only:
 - auditor_opinion: it is the independent auditor's report, not management's notes
 - this_company: the doubt concerns the company filing this report, not another entity
-- current_year: it concerns the fiscal year ended {period_end}, not an earlier year
-- doubt_expressed: it states that substantial doubt exists
+- current_year: it concerns the fiscal year ended {period_end}, not an earlier
+  year. A passage that recalls doubt stated in an earlier report, or about an
+  earlier year end, is not about this year.
 - alleviated: it states that management's plans alleviate the doubt
+- doubt_expressed: it states that substantial doubt exists now. Doubt that
+  existed before, no longer exists, or is alleviated is not doubt that
+  exists now, so if alleviated is true, doubt_expressed is false.
 
 Text:
 <<<

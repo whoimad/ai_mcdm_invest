@@ -91,23 +91,19 @@ def test_a_verified_doubt_in_the_auditors_opinion_is_flagged(tmp_path: Path) -> 
 
 
 def test_only_the_auditors_current_doubt_about_this_company_is_flagged() -> None:
-    combinations = itertools.product([False, True], repeat=5)
-    flagged = {
-        fields
-        for fields in combinations
-        if going_concern_flag(
-            **dict(
-                zip(
-                    FIELDS,
-                    fields,
-                    strict=True,
-                )
-            )
-        )
-    }
+    combinations = itertools.product([False, True], repeat=len(FIELDS))
+    flagged = [
+        facts
+        for values in combinations
+        for facts in [dict(zip(FIELDS, values, strict=True))]
+        if going_concern_flag(**facts)
+    ]
 
     # Whether the doubt was alleviated is stored but never changes the score.
-    assert flagged == {(True, True, True, True, False), (True, True, True, True, True)}
+    scored = ["auditor_opinion", "this_company", "current_year", "doubt_expressed"]
+    assert len(flagged) == 2
+    assert all(all(facts[field] for field in scored) for facts in flagged)
+    assert {facts["alleviated"] for facts in flagged} == {False, True}
 
 
 def test_a_quote_is_found_despite_line_breaks_and_spacing() -> None:
