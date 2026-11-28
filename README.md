@@ -133,6 +133,8 @@ Rows without such a 10-K (foreign filers, funds, companies whose first 10-K
 came later) or whose 10-K is not in the corpus keep their row with those
 columns empty; fiscal 2017 has a 10-K for 81.5% of rows and its text for
 79.5%.
+EDGAR-CORPUS also lacks some very large companies (AT&T, GE, Pfizer,
+Verizon); the "10-K in the corpus" step excludes and counts them.
 
 An Item counts as absent when its section is empty or a stub: under 1,000
 characters and opening by saying it is omitted, not applicable, or found
