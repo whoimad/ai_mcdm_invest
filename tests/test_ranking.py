@@ -3,7 +3,13 @@
 import pandas as pd
 import pytest
 
-from ai_mcdm_invest.mcdm.ranking import criterion_weights, saw, topsis
+from ai_mcdm_invest.mcdm.ranking import (
+    criterion_weights,
+    group_shares,
+    saw,
+    topsis,
+    weights_from_groups,
+)
 
 # Three companies scored on two criteria, higher better.
 MATRIX = pd.DataFrame({"a": [1.0, 0.5, 0.0], "b": [0.0, 0.5, 1.0]}, index=["x", "y", "z"])
@@ -119,3 +125,60 @@ def test_the_balanced_profile_weighs_every_group_alike() -> None:
 
     assert weights["pe_score"] == pytest.approx(1 / 3)  # no ML or text criterion yet
     assert sum(weights.values()) == pytest.approx(1.0)
+
+
+def test_custom_group_weights_follow_the_profile_rule() -> None:
+    # Sliders at 30 / 0 / 30 / 40 / 0 (any scale): with ratios and ML on, the
+    # balance sheet's 30 of 100 is split over its three ratios.
+    groups = {"profitability": 30, "valuation": 0, "balance_sheet": 30, "ml_risk": 40, "text": 0}
+
+    weights = weights_from_groups(groups, RATIOS | {"ml_risk_score": "ml_risk"}, {"ratios", "ml"})
+
+    assert weights["roe_score"] == pytest.approx(0.15)
+    assert weights["pe_score"] == 0.0
+    assert weights["debt_equity_score"] == pytest.approx(0.1)
+    assert weights["ml_risk_score"] == pytest.approx(0.4)
+
+
+def test_a_profile_s_group_weights_give_the_profile_s_criterion_weights() -> None:
+    criteria = RATIOS | {"ml_risk_score": "ml_risk"}
+    groups = {"profitability": 25, "valuation": 35, "balance_sheet": 10, "ml_risk": 20, "text": 10}
+
+    assert weights_from_groups(groups, criteria, {"ratios", "ml"}) == pytest.approx(
+        criterion_weights("value-minded", criteria, {"ratios", "ml"})
+    )
+
+
+def test_weights_that_are_all_zero_on_the_layers_in_use_are_refused() -> None:
+    groups = {"profitability": 0, "valuation": 0, "balance_sheet": 0, "ml_risk": 50, "text": 0}
+
+    with pytest.raises(ValueError, match="above zero"):
+        weights_from_groups(groups, RATIOS, {"ratios"})
+
+
+def test_group_shares_sum_to_one_and_a_switched_off_group_holds_none() -> None:
+    # Risk-averse with the ratios alone: 10 / 10 / 20 of 40%.
+    criteria = RATIOS | {"ml_risk_score": "ml_risk", "going_concern_score": "text"}
+    groups = {"profitability": 10, "valuation": 10, "balance_sheet": 20, "ml_risk": 40, "text": 20}
+
+    shares = group_shares(groups, criteria, {"ratios"})
+
+    assert shares == pytest.approx(
+        {
+            "profitability": 0.25,
+            "valuation": 0.25,
+            "balance_sheet": 0.5,
+            "ml_risk": 0.0,
+            "text": 0.0,
+        }
+    )
+
+
+def test_a_reference_matrix_sets_topsis_s_ideal_and_scale() -> None:
+    # Measured against the three companies of the first TOPSIS test, x and y
+    # keep their scores there, even when ranked alone.
+    reference = pd.DataFrame({"a": [1.0, 0.6, 0.0], "b": [0.0, 0.6, 1.0]}, index=["x", "y", "z"])
+
+    score = topsis(reference.loc[["y", "x"]], {"a": 3.0, "b": 1.0}, reference=reference)
+
+    assert score.to_dict() == pytest.approx({"y": 0.6, "x": 0.75})

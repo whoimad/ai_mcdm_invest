@@ -37,30 +37,48 @@ uv sync
 
 `make screener` (or `uv run streamlit run app/screener.py`) opens a
 read-only view of the study's ranking in the browser. It reads the tables in
-`data/processed` and calls no model. Each company's score comes from the
-package's own weights and SAW, so it is the score the study ranks it by.
+`data/processed` and calls no model. Its logic lives in
+`ai_mcdm_invest.screener`; the scores come from the package's weights, SAW
+and TOPSIS, and the theme from `.streamlit/config.toml` (one colour for risk,
+one for safety).
+
+The top bar holds:
 
 - **As of**: "Fiscal 2017, returns over 2018" or "Fiscal 2018, returns over
-  2019". Companies are ranked on their fiscal-year data; the reveal (off by
-  default) shows the return over the next calendar year.
-- **Profile**: balanced, risk-averse or value-minded, as in the table above.
-- **Layers**: ratios, ML risk model, 10-K text. A layer switched off loses its
-  weight and the rest are rescaled. The text layer is greyed out until the
-  test-year going-concern run has written its tables.
-- **Sector**: ranks one sector's companies only.
+  2019". Companies are ranked on their fiscal-year data.
+- **Method**: SAW (the study's main ranker, the weighted sum of the
+  percentiles, 0 to 100) or TOPSIS (its robustness check, the closeness to the
+  ideal company, 0 to 1). TOPSIS takes its scale, ideal and worst from the
+  study's evaluation universe, both test years together, as the study does.
+- **Layers**: ratios, ML risk model, 10-K text. A layer switched off gives its
+  groups no weight, greys out their sliders, and the rest are rescaled. The
+  text layer is left out until the test-year going-concern run has written its
+  tables.
+- **Reveal next-year returns** (off by default): the return column and the
+  share of tail losers in the riskiest and safest fifths of the rows shown.
+- **Profile**: Balanced, Risk-averse, Value-minded (as in the table above) or
+  Custom, with one slider per group (Profitability, Valuation, Balance sheet,
+  ML risk, 10-K text). A profile fills the sliders; moving one switches to
+  Custom; "Reset" goes back to the last profile. Weights are rescaled to 100%
+  and split equally within a group. On a fixed profile with the study's layer
+  rows (ratios only, + ML, + LLM) the page says the scores match the study's;
+  on Custom it says the weights are not part of the study's tests.
 
-The company card shows each ratio's scored market-wide percentile with its
-sector percentile beside it (context, not scored), the ML safety percentile
-(higher is safer) with the tail-loss probability it comes from, the five
-largest contributions to that probability (from `ml_risk`), and the going-concern
-result: the auditor's quoted paragraph when flagged, "no flags" when clear,
-and "text not available" with the reason otherwise (no 10-K found, not in the
-corpus, no audit report, extraction failed). Only scored facts are shown.
+Filters (sector, going-concern status, ticker or name) only hide rows: scores
+and ranks stay those of the whole year. Clicking a row opens its card: rank and
+score, then tabs for the ratios (scored market-wide percentile, the sector
+percentile as a grey mark, context, not scored, and each criterion's current
+weight), the ML risk (safety percentile, tail-loss probability, the five
+largest contributions from `ml_risk` as signed bars) and the 10-K text (the
+auditor's quoted paragraph when flagged, "no flags" when clear, and "text not
+available" with the reason otherwise). Only scored facts are shown.
 
 The screener lists every test-year company with enough ratios; the study's
-measures use only those whose 10-K text is readable. It ranks scored facts
-under fixed weights: it does not recommend buying any stock and does not
-forecast returns.
+measures use only those whose 10-K text is readable. `make test-slow` checks
+that on every fixed profile, layer row and method its scores give the study's
+tail-loss AUC on that universe, and runs the page through `streamlit.testing`.
+It ranks scored facts under fixed weights: it does not recommend buying any
+stock and does not forecast returns.
 
 ## Data
 
