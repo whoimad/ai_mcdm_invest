@@ -19,6 +19,7 @@ from ai_mcdm_invest.config import Settings
 from ai_mcdm_invest.criteria.ratios import REPORTED
 from ai_mcdm_invest.evaluation.ablation import TEXT_GROUP
 from ai_mcdm_invest.llm.going_concern import CLEAR, FAILED, FLAGGED
+from ai_mcdm_invest.llm.keyword_benchmark import KEYWORD_VERSION
 from ai_mcdm_invest.mcdm.ranking import (
     GROUP_LAYER,
     PROFILES,
@@ -28,17 +29,23 @@ from ai_mcdm_invest.mcdm.ranking import (
 )
 from ai_mcdm_invest.ml.risk_score import ML_GROUP, ML_SCORE_COLUMN, TOP_CONTRIBUTIONS
 from ai_mcdm_invest.screener import (
+    KEYWORD_ONLY,
     METHODS,
     NO_10K,
     NO_REPORT,
     NO_RUN,
     NOT_IN_CORPUS,
     NOT_READ,
+    TextEvidence,
+    card_company,
+    clicked_company,
+    edgar_url,
     filter_rows,
     load_table,
     score,
     study_layer_row,
     tail_shares,
+    text_evidence,
 )
 
 # The two test years; each next-year return runs over the calendar year after.
@@ -85,6 +92,14 @@ STATUS_COLOURS = {FLAGGED: RISK, CLEAR: SAFETY}
 # SAW is a weighted mean of percentiles, shown 0 to 100; TOPSIS a closeness, 0 to 1.
 SCALE = {"SAW": 100.0, "TOPSIS": 1.0}
 SCORE_FORMAT = {"SAW": "%.1f", "TOPSIS": "%.3f"}
+# The five facts the LLM gives about each quote; the flag needs the first four.
+FACT_LABELS = {
+    "auditor_opinion": "In the auditor's opinion",
+    "this_company": "About this company",
+    "current_year": "About this fiscal year",
+    "doubt_expressed": "Doubt expressed",
+    "alleviated": "Alleviated by management's plans",
+}
 DISCLAIMER = (
     "A ranking of scored facts under fixed weights. It does not recommend buying any "
     "stock and does not forecast returns. The ML layer's results are exploratory."
@@ -271,8 +286,10 @@ def summary(shown: pd.DataFrame, reveal: bool) -> None:
     cards[3].metric("Tail losers in safest fifth", safest, help=help_text, border=True)
 
 
-def ranking_table(shown: pd.DataFrame, method: str, reveal: bool, total: int) -> int | None:
-    """The ranking; returns the selected company's cik, if a row is clicked."""
+def ranking_table(
+    shown: pd.DataFrame, method: str, reveal: bool, total: int
+) -> tuple[int, int] | None:
+    """The ranking; returns the clicked company's (cik, fiscal year), if any."""
     score_label = f"Score ({method})"
     frame = pd.DataFrame(
         {
@@ -291,27 +308,50 @@ def ranking_table(shown: pd.DataFrame, method: str, reveal: bool, total: int) ->
     st.caption(
         f"{len(shown)} of {total} companies. Higher is safer or better. Click a row for its card."
     )
+    # A click on any cell selects its row. Without a key, the table's selection
+    # starts empty whenever its rows change, so a position never points at a
+    # company from an earlier filter. Widths keep every column in view.
     event = st.dataframe(
         frame,
         hide_index=True,
         height=560,
         on_select="rerun",
-        selection_mode="single-row",
+        selection_mode="single-cell",
         column_config={
+            "Rank": st.column_config.NumberColumn(width=55, pinned=True),
+            "Ticker": st.column_config.TextColumn(width=60, pinned=True),
+            "Company": st.column_config.TextColumn(width=170),
+            "Sector": st.column_config.TextColumn(width=110),
             score_label: st.column_config.ProgressColumn(
-                format=SCORE_FORMAT[method], min_value=0, max_value=SCALE[method], color=SAFETY
+                format=SCORE_FORMAT[method],
+                min_value=0,
+                max_value=SCALE[method],
+                color=SAFETY,
+                width=110,
             ),
-            "ML safety (percentile)": st.column_config.NumberColumn(format="%.0f"),
-            "Tail-loss probability (%)": st.column_config.NumberColumn(format="%.1f"),
+            "ML safety (percentile)": st.column_config.NumberColumn(
+                "ML safety", format="%.0f", width=75, help="ML safety percentile, 0 to 100."
+            ),
+            "Tail-loss probability (%)": st.column_config.NumberColumn(
+                "Tail-loss (%)",
+                format="%.1f",
+                width=85,
+                help="The ML model's tail-loss probability, in %.",
+            ),
             "Going concern": st.column_config.MultiselectColumn(
                 options=list(STATUS_LABELS.values()),
                 color=[STATUS_COLOURS.get(s, NEUTRAL) for s in STATUS_LABELS],
+                width=120,
             ),
-            "Return over next calendar year (%)": st.column_config.NumberColumn(format="%+.1f"),
+            "Return over next calendar year (%)": st.column_config.NumberColumn(
+                "Next-year return (%)",
+                format="%+.1f",
+                width=90,
+                help="Return over the next calendar year, in %.",
+            ),
         },
     )
-    rows = event.selection.rows
-    return int(shown["cik"].iloc[rows[0]]) if rows else None
+    return clicked_company(shown, event.selection.cells, event.selection.rows)
 
 
 def ratios_tab(company: pd.Series, criteria: dict[str, str], weights: dict[str, float]) -> None:
@@ -390,6 +430,12 @@ def ml_tab(company: pd.Series, layers: set[str]) -> None:
     )
 
 
+def facts_line(quote: pd.Series) -> str:
+    return " · ".join(
+        f"{FACT_LABELS[field]}: **{'yes' if quote[field] else 'no'}**" for field in FACT_LABELS
+    )
+
+
 def text_tab(company: pd.Series, quotes: pd.DataFrame, layers: set[str]) -> None:
     status = company["status"]
     st.markdown(
@@ -397,17 +443,21 @@ def text_tab(company: pd.Series, quotes: pd.DataFrame, layers: set[str]) -> None
     )
     if "text" not in layers:
         st.caption("The 10-K text layer is switched off: this result is not in the ranking.")
+    evidence = text_evidence(company, quotes)
     if status == FLAGGED:
         st.markdown(
             "The auditor's report on this fiscal year expresses substantial doubt that the "
             "company can continue as a going concern. Scored 0."
         )
-        mine = quotes[
-            (quotes["cik"] == company["cik"]) & (quotes["fiscal_year"] == company["fiscal_year"])
-        ]
-        for item, quote in mine.sort_values("chunk")[["item", "quote"]].to_numpy():
-            st.caption(f"Quoted from Item {item}:")
-            st.markdown("\n".join(f"> {line}" for line in str(quote).splitlines()))
+        for _, quote in evidence.quotes.iterrows():
+            st.caption(f"Quoted from Item {quote['item']}:")
+            st.markdown("\n".join(f"> {line}" for line in str(quote["quote"]).splitlines()))
+            st.caption(facts_line(quote))
+        st.caption(
+            "The LLM gives five facts about each quote; the flag needs the first four "
+            "(auditor's opinion, this company, this fiscal year, doubt expressed). Each "
+            "quote was found in the 10-K text by code before it was accepted."
+        )
     elif status == CLEAR:
         st.markdown("No flags: the auditor's report raises no going-concern doubt. Scored 1.")
     else:
@@ -415,6 +465,27 @@ def text_tab(company: pd.Series, quotes: pd.DataFrame, layers: set[str]) -> None
             f"Text not available ({STATUS_LABELS[status].lower()}). "
             "Nothing is scored; the company is ranked on its other criteria."
         )
+    keyword_verdict(evidence)
+    if isinstance(company["accession"], str):
+        st.link_button(
+            "Open the filing on SEC EDGAR", edgar_url(int(company["cik"]), company["accession"])
+        )
+
+
+def keyword_verdict(evidence: TextEvidence) -> None:
+    """The keyword benchmark's verdict beside the LLM's."""
+    if evidence.keyword_flag is None:
+        return
+    st.markdown(
+        f"**Keyword benchmark ({KEYWORD_VERSION})**: "
+        + ("flagged the filing." if evidence.keyword_flag else "did not flag the filing.")
+    )
+    if evidence.keyword_sentence:
+        st.markdown(f"> {evidence.keyword_sentence}")
+    if evidence.disagreement == KEYWORD_ONLY:
+        st.caption("The two disagree: the keywords flag the filing, the LLM does not.")
+    elif evidence.disagreement is not None:
+        st.caption("The two disagree: the LLM flags the filing, the keywords do not.")
 
 
 def card(
@@ -461,6 +532,10 @@ def about() -> None:
         )
 
 
+def company_key(company: pd.Series) -> tuple[int, int]:
+    return int(company["cik"]), int(company["fiscal_year"])
+
+
 st.set_page_config(page_title="Risk-aware screener", layout="wide")
 table, quotes, criteria, has_text = load(str(Settings.from_env().processed_dir))
 init_state()
@@ -485,15 +560,18 @@ summary(shown, reveal)
 left, right = st.columns([3, 2], gap="large")
 with left:
     clicked = ranking_table(shown, method, reveal, len(rows))
-# Keyed by cik, not row, so the card stays on its company as the ranking re-sorts.
+# Keyed by (cik, fiscal year), not row, so the card stays on its company as the
+# ranking re-sorts; it is always one of the rows shown.
 if clicked is not None:
     st.session_state["card"] = clicked
 with right:
-    if shown.empty:
+    chosen = st.session_state.get("card")
+    company = card_company(shown, chosen)
+    if company is None:
         st.info("No company matches the filters.")
     else:
-        chosen = shown[shown["cik"] == st.session_state.get("card")]
-        company = (chosen if len(chosen) else shown).iloc[0]
+        if chosen is not None and company_key(company) != chosen:
+            st.caption("The company you chose is not among the rows shown: this is the first row.")
         card(company, method, len(rows), reveal, criteria, weights, quotes, layers)
 
 about()

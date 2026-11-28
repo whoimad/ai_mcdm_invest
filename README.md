@@ -65,13 +65,24 @@ The top bar holds:
   on Custom it says the weights are not part of the study's tests.
 
 Filters (sector, going-concern status, ticker or name) only hide rows: scores
-and ranks stay those of the whole year. Clicking a row opens its card: rank and
-score, then tabs for the ratios (scored market-wide percentile, the sector
-percentile as a grey mark, context, not scored, and each criterion's current
-weight), the ML risk (safety percentile, tail-loss probability, the five
-largest contributions from `ml_risk` as signed bars) and the 10-K text (the
-auditor's quoted paragraph when flagged, "no flags" when clear, and "text not
-available" with the reason otherwise). Only scored facts are shown.
+and ranks stay those of the whole year. Clicking any cell of a row opens its
+card; the card follows the company (cik and fiscal year), not the row, and is
+always one of the rows shown: when the filters or the year hide the chosen
+company, it shows the first row shown, or nothing when no row is shown. The
+card holds rank and score, then tabs for the ratios (scored market-wide
+percentile, the sector percentile as a grey mark, context, not scored, and
+each criterion's current weight), the ML risk (safety percentile, tail-loss
+probability, the five largest contributions from `ml_risk` as signed bars) and
+the 10-K text. That tab gives the auditor's quoted paragraph when flagged,
+"no flags" when clear, and "text not available" with the reason otherwise.
+Under each quote are the five facts the LLM gave (auditor's opinion, this
+company, this fiscal year, doubt expressed, alleviated); the flag needs the
+first four, and each quote was found in the 10-K text by code before it was
+accepted. Beside the LLM's verdict is the keyword benchmark's (`kw-1`):
+whether it flagged the filing and the sentence it matched, with a line when
+the two disagree. A button opens the filing on SEC EDGAR, a link built from
+its accession number; the page itself makes no network call.
+The keyword verdict and the five facts are context: only the flag is scored.
 
 The screener lists every test-year company with enough ratios; the study's
 measures use only those whose 10-K text is readable. `make test-slow` checks

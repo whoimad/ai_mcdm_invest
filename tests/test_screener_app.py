@@ -6,6 +6,7 @@ Kept out of CI (it needs the processed tables); run with `make test-slow`.
 
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -27,6 +28,22 @@ def app() -> AppTest:
     at = AppTest.from_file(APP, default_timeout=120).run()
     assert not at.exception
     return at
+
+
+def key_of(table: pd.DataFrame, ticker: str, year: int) -> tuple[int, int]:
+    row = table[(table["ticker"] == ticker) & (table["fiscal_year"] == year)].iloc[0]
+    return int(row["cik"]), year
+
+
+def open_card(at: AppTest, company: pd.Series) -> str:
+    """Opens the company's card and returns its 10-K text tab's text."""
+    at.button_group(key="year").set_value(int(company["fiscal_year"]))
+    at.session_state["card"] = (int(company["cik"]), int(company["fiscal_year"]))
+    at.text_input(key="search").set_value(company["ticker"])
+    run(at)
+    assert at.subheader[0].value.startswith(f"{company['ticker']} · ")
+    tab = at.tabs[2]
+    return "\n".join(e.value for e in [*tab.markdown, *tab.caption])
 
 
 def run(at: AppTest) -> AppTest:
@@ -84,11 +101,10 @@ def test_filters_hide_rows_and_a_card_opens_on_the_chosen_company(app: AppTest) 
     assert 0 < len(shown) < 3900
     assert "Return over next calendar year (%)" in shown.columns
 
-    # A row click stores the company's cik; the card follows it.
+    # A click stores the company's (cik, fiscal year); the card follows it.
     table = load_table(Settings.from_env().processed_dir)[0]
     ticker = shown["Ticker"].iloc[-1]
-    chosen = table[(table["ticker"] == ticker) & (table["fiscal_year"] == 2017)]
-    app.session_state["card"] = int(chosen["cik"].iloc[0])
+    app.session_state["card"] = key_of(table, ticker, 2017)
     run(app)
     assert app.subheader[0].value.startswith(f"{ticker} · ")
     assert app.tabs[0].label == "Ratios"
@@ -105,3 +121,63 @@ def test_no_layer_and_all_zero_weights_are_explained(app: AppTest) -> None:
         app.slider(key=f"weight_{group}").set_value(0)
     run(app)
     assert "above zero" in app.warning[0].value
+
+
+@pytest.fixture(scope="module")
+def table() -> pd.DataFrame:
+    return load_table(Settings.from_env().processed_dir)[0]
+
+
+def test_a_flagged_card_shows_the_quotes_facts_link_and_kw_1(
+    app: AppTest, table: pd.DataFrame
+) -> None:
+    company = table[(table["status"] == "flagged") & table["keyword_flag"].eq(True)].iloc[0]
+
+    text = open_card(app, company)
+
+    assert "Quoted from Item" in text
+    assert "In the auditor's opinion: **yes**" in text
+    assert "found in the 10-K text by code" in text
+    assert "kw-1)**: flagged the filing." in text
+    assert "disagree" not in text
+    assert app.tabs[2].get("link_button")[0].proto.url == (
+        f"https://www.sec.gov/Archives/edgar/data/{company['cik']}/"
+        f"{company['accession'].replace('-', '')}/"
+    )
+
+
+@pytest.mark.parametrize(
+    ("status", "keyword_flag", "line"),
+    [
+        ("clear", True, "the keywords flag the filing, the LLM does not"),
+        ("flagged", False, "the LLM flags the filing, the keywords do not"),
+    ],
+)
+def test_a_disagreement_is_said(
+    app: AppTest, table: pd.DataFrame, status: str, keyword_flag: bool, line: str
+) -> None:
+    company = table[(table["status"] == status) & table["keyword_flag"].eq(keyword_flag)].iloc[0]
+
+    assert line in open_card(app, company)
+
+
+def test_the_card_is_one_of_the_rows_shown(app: AppTest, table: pd.DataFrame) -> None:
+    # A company chosen, then hidden by the filter: the card falls back to the first row.
+    app.session_state["card"] = key_of(table, "CSX", 2017)
+    run(app)
+    assert app.subheader[0].value.startswith("CSX · ")
+
+    app.multiselect(key="statuses").set_value(["flagged"])
+    run(app)
+    first = app.dataframe[0].value["Ticker"].iloc[0]
+    assert app.subheader[0].value.startswith(f"{first} · ")
+    assert any("not among the rows shown" in c.value for c in app.caption)
+
+    app.text_input(key="search").set_value("no such company")
+    run(app)
+    assert not app.subheader
+    assert "No company matches" in app.info[0].value
+
+
+def test_tail_loss_values_are_in_the_table(app: AppTest) -> None:
+    assert app.dataframe[0].value["Tail-loss probability (%)"].notna().mean() > 0.9
