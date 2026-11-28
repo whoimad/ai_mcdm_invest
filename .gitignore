@@ -10,5 +10,5 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Report (LaTeX source and build, kept out of git for now)
+# LaTeX sources and build, kept out of git
 /report/

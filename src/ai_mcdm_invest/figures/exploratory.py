@@ -824,7 +824,7 @@ def worked_example(joined: pd.DataFrame, passages: pd.DataFrame) -> ReportFigure
 
 
 def _ratio(column: str, value: float) -> str:
-    """A criterion value as the report prints it: margins and returns in percent."""
+    """A criterion value as the figures print it: margins and returns in percent."""
     if column in {"returnOnEquity", "netProfitMargin"}:
         return f"{value:.0%}"
     return f"{value:,.2f}"

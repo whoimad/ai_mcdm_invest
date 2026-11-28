@@ -1,6 +1,6 @@
 """Worked example stage: quoted 10-K passages of one company, for the exploratory section.
 
-The report shows one company's fundamentals beside what its 10-K says, to
+It shows one company's fundamentals beside what its 10-K says, to
 show at a glance what text adds that numbers cannot. The company is chosen by
 hand (`Settings.worked_example`), from the development years only: no test-year filing
 is read before the pre-registration (decision 5.1).

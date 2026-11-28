@@ -28,7 +28,7 @@ class Settings:
 
     `data_dir` holds every derived table and is ignored by git.
     `manifest_path` records the exact raw files the study is built on.
-    `worked_example` is the ticker and fiscal year whose 10-K the report quotes;
+    `worked_example` is the ticker and fiscal year whose 10-K the worked example quotes;
     it must be in the raw data, so the fixture dataset names its own.
     """
 

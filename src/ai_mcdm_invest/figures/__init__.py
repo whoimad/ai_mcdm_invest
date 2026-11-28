@@ -1,1 +1,1 @@
-"""Figures for the report, drawn from the pipeline's tables."""
+"""The study's figures, drawn from the pipeline's tables."""

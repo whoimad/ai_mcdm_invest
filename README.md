@@ -440,11 +440,11 @@ tail-loss rate of 59%.
 
 ## Figures
 
-`make all` ends by drawing the report's figures into `data/figures/`, each as
-PDF (for the report) and PNG, with every caption (sample size, source, fiscal
+`make all` ends by drawing the study's figures into `data/figures/`, each as
+PDF and PNG, with every caption (sample size, source, fiscal
 and return years) in `data/figures/captions.md`. They read only the pipeline's
 tables, and describe the data only: no model result appears in them. The four
-storyline figures carry the report's argument:
+storyline figures carry the study's argument:
 
 | Figure | Shows |
 |---|---|

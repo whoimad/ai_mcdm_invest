@@ -1,7 +1,7 @@
-"""What every report figure shares: its record, the files it is written to, its look.
+"""What every figure shares: its record, the files it is written to, its look.
 
-Each figure is drawn from the pipeline's tables only, and written as PDF (for
-the report) and PNG (to look at), with its caption in `captions.md`. A
+Each figure is drawn from the pipeline's tables only, and written as PDF and
+PNG, with its caption in `captions.md`. A
 caption states the sample size (n), the source, and the fiscal and return
 years.
 """
@@ -49,7 +49,7 @@ def write_figures(figures: list[ReportFigure], folder: Path) -> Path:
         item.figure.savefig(folder / f"{item.name}.png", dpi=200)
     captions = folder / "captions.md"
     captions.write_text(
-        "# Figure captions\n\nRegenerated with the figures; paste into the report.\n"
+        "# Figure captions\n\nRegenerated with the figures.\n"
         + "".join(f"\n## {item.name}\n\n{item.caption}\n" for item in figures)
     )
     return captions

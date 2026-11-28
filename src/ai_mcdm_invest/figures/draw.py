@@ -21,7 +21,7 @@ def report_figures(
     filings: pd.DataFrame,
     passages: pd.DataFrame,
 ) -> list[ReportFigure]:
-    """The storyline figures, then the exploratory ones, in the report's order."""
+    """The storyline figures, then the exploratory ones, in the study's order."""
     return storyline_figures(clean, links, joined, filings) + exploratory_figures(
         joined, filings, passages
     )

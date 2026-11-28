@@ -1,4 +1,4 @@
-"""The four storyline figures: the report's argument before the system appears.
+"""The four storyline figures: the study's argument before the system appears.
 
 1. `join_funnel`: the join keeps the tail losers a ticker join would lose.
 2. `leverage_tail_loss`: across the whole market, leverage points the wrong

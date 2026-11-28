@@ -51,7 +51,7 @@ Each test reports the LR statistic, its p-value, and the flag's odds ratio with 
 - Model `qwen2.5:7b@sha256:845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e`, temperature 0, seed 42, 32,768-token context, schema-constrained JSON.
 - Scoring rule: a chunk is flagged only when it is the auditor's opinion, about this company, about the current fiscal year, and doubt is expressed. `alleviated` is stored and does not change the score. A 10-K is flagged when any chunk is, else failed when any chunk failed, else clear.
 
-**What was not redone.** The training-year run and `kw-1`'s tuning used prompt `gc-1`. The gc-1 gate failed on stale opinions (19 of 50 correct). `gc-2` changed only the prompt wording for stale and alleviated doubt, and asks `alleviated` before `doubt_expressed`. The scoring rule did not change. The training years were not rerun with `gc-2`, for lack of time.
+**What was not redone.** The training-year run and `kw-1`'s tuning used prompt `gc-1`. The gc-1 gate failed on stale opinions (19 of 50 correct). `gc-2` changed only the prompt wording for stale and alleviated doubt, and asks `alleviated` before `doubt_expressed`. The scoring rule did not change. The training years were not rerun with `gc-2`.
 
 ## 6. Gate result
 
