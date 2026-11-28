@@ -244,6 +244,19 @@ counts and the list of "extraction failed" 10-Ks. Its store
 a killed run resumes only under the same prompt version and model digest.
 Results: `going_concern_test_filings` and `going_concern_test_chunks`.
 
+Run on 2026-11-27/28 with prompt `gc-2`, after `gc-2` passed the gate (200 of
+200 canaries) and `PREREGISTRATION.md` was pushed (commit `4947c87`). The
+training-year run above and `kw-1`'s tuning used `gc-1`; they were not rerun.
+
+| Fiscal year | 10-Ks | Flagged | Clear | Failed | No report | Fallback reads | Seconds per 10-K |
+|---|---|---|---|---|---|---|---|
+| 2017 | 3,343 | 145 | 3,098 | 16 | 84 | 35 | 3.25 |
+| 2018 | 3,357 | 168 | 3,080 | 23 | 86 | 36 | 3.52 |
+| All | 6,700 | 313 | 6,178 | 39 | 170 | 71 | 3.39 |
+
+Seconds per 10-K are higher than on the training years partly because the run
+was paused whenever the GPU reached 85 °C.
+
 The keyword benchmark (`llm/keyword_benchmark.py`, decision 6.6) is the
 non-LLM rival. A strict regex reads the same located chunks one sentence at a
 time. It flags a sentence that says there is substantial doubt about a named
@@ -403,6 +416,27 @@ already in ML's riskiest fifth (`test_year_riskiest_fifth`), and the filings
 where the LLM and `kw-1` disagree, with both quotes (`test_year_disagreements`,
 the ten ML finds riskiest shown in the summary). Failed extractions are listed
 in `test_year_failed`.
+
+Results on fiscal 2017–2018 pooled (6,530 companies, 1,410 tail losers; the
+tests use the 6,491 whose extraction did not fail):
+
+| Test | Flag | Given | Flagged | LR statistic | p-value | Odds ratio (95% interval) |
+|---|---|---|---|---|---|---|
+| H1 | LLM | ML | 313 | 30.5 | < 0.001 | 2.13 (1.62–2.80) |
+| H2 | `kw-1` | ML | 311 | 27.2 | < 0.001 | 2.04 (1.55–2.68) |
+| H3 | LLM | ML, `kw-1` | 313 | 3.3 | 0.071 | 2.03 (0.93–4.42) |
+
+Both flags add information beyond the ML score, but the LLM adds no
+significant information beyond the keyword benchmark (H3 is a null). 88% of
+the LLM's flagged companies are already in ML's riskiest fifth (276 of 313),
+and their tail-loss rate is 68%. The AUC gain of `+ LLM` over `+ ML` is 0.004
+to 0.007 across profiles, SAW and TOPSIS, with or without fallback reads
+(balanced SAW: 0.748 to 0.754). The LLM and `kw-1` disagree on 30 filings (16
+flagged by the LLM only, 14 by `kw-1` only). Among the LLM-only flags are
+errors: a management note quoting the accounting rule (ASU 2014-15), and
+auditor paragraphs that only say the company "will require additional
+financing", with no substantial doubt stated. The 39 failed extractions have a
+tail-loss rate of 59%.
 
 ## Figures
 
