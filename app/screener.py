@@ -39,10 +39,17 @@ from ai_mcdm_invest.screener import (
     TextEvidence,
     card_company,
     clicked_company,
+    company_choices,
     edgar_url,
     filter_rows,
     load_table,
+    not_in_year_line,
+    parse_tickers,
+    rank_label,
+    rank_rows,
     score,
+    shortlist_rows,
+    split_known,
     study_layer_row,
     tail_shares,
     text_evidence,
@@ -100,6 +107,7 @@ FACT_LABELS = {
     "doubt_expressed": "Doubt expressed",
     "alleviated": "Alleviated by management's plans",
 }
+MODES = {"all": "All companies", "shortlist": "My shortlist"}
 DISCLAIMER = (
     "A ranking of scored facts under fixed weights. It does not recommend buying any "
     "stock and does not forecast returns. The ML layer's results are exploratory."
@@ -162,6 +170,23 @@ def init_state() -> None:
     st.session_state.setdefault("profile", base)
     if any(slider_key(group) not in st.session_state for group in GROUP_LABELS):
         fill_sliders(base)
+    st.session_state.setdefault("shortlist", [])
+    st.session_state.setdefault("unknown", [])
+
+
+# The shortlist is kept by ticker in "shortlist", so it lasts across years and
+# modes; the search box's own state is dropped while it is hidden.
+def on_search() -> None:
+    st.session_state["shortlist"] = list(st.session_state["shortlist_box"])
+
+
+def on_paste(table: pd.DataFrame) -> None:
+    known, unknown = split_known(table, parse_tickers(st.session_state["paste"]))
+    shortlist = list(dict.fromkeys([*st.session_state["shortlist"], *known]))
+    st.session_state["shortlist"] = shortlist
+    st.session_state["shortlist_box"] = shortlist
+    st.session_state["unknown"] = unknown
+    st.session_state["paste"] = ""
 
 
 def top_bar(has_text: bool) -> tuple[int, str, set[str], bool]:
@@ -250,6 +275,39 @@ def study_note(method: str, layers: set[str]) -> None:
         )
 
 
+def shortlist_panel(table: pd.DataFrame) -> bool:
+    """The mode switch and, in shortlist mode, the search box and the paste
+    field; whether shortlist mode is on."""
+    mode_col, search_col, paste_col = st.columns([2, 4, 2], vertical_alignment="bottom")
+    mode = mode_col.segmented_control(
+        "Show", list(MODES), format_func=MODES.get, default="all", required=True, key="mode"
+    )
+    if mode != "shortlist":
+        return False
+    choices = company_choices(table)
+    if "shortlist_box" not in st.session_state:
+        st.session_state["shortlist_box"] = st.session_state["shortlist"]
+    search_col.multiselect(
+        "Shortlist",
+        list(choices),
+        format_func=choices.get,
+        placeholder="Search a ticker or name",
+        key="shortlist_box",
+        on_change=on_search,
+    )
+    paste_col.text_input(
+        "Paste tickers",
+        placeholder="AAPL, MSFT, F",
+        key="paste",
+        on_change=on_paste,
+        args=(table,),
+        help="Tickers separated by commas or spaces; press Enter to add them.",
+    )
+    if st.session_state["unknown"]:
+        st.warning("Not found in either year: " + ", ".join(st.session_state["unknown"]) + ".")
+    return True
+
+
 def filters(rows: pd.DataFrame) -> tuple[list[str], list[str], str]:
     sector_col, status_col, search_col = st.columns([3, 3, 2])
     sectors = sector_col.multiselect(
@@ -266,9 +324,13 @@ def filters(rows: pd.DataFrame) -> tuple[list[str], list[str], str]:
     return sectors, statuses, search
 
 
-def summary(shown: pd.DataFrame, reveal: bool) -> None:
+def summary(shown: pd.DataFrame, reveal: bool, shortlist: bool) -> None:
     cards = st.columns(4)
-    cards[0].metric("Companies shown", f"{len(shown):,}", border=True)
+    cards[0].metric(
+        "Shortlisted companies shown" if shortlist else "Companies shown",
+        f"{len(shown):,}",
+        border=True,
+    )
     cards[1].metric("Going concern flagged", int((shown["status"] == FLAGGED).sum()), border=True)
     if not reveal:
         return
@@ -287,13 +349,27 @@ def summary(shown: pd.DataFrame, reveal: bool) -> None:
 
 
 def ranking_table(
-    shown: pd.DataFrame, method: str, reveal: bool, total: int
+    shown: pd.DataFrame, method: str, reveal: bool, total: int, listed: int | None
 ) -> tuple[int, int] | None:
-    """The ranking; returns the clicked company's (cik, fiscal year), if any."""
+    """The ranking; returns the clicked company's (cik, fiscal year), if any.
+    In shortlist mode (`listed` companies on the shortlist that year), the rank
+    is the shortlist's, with the market-wide rank beside it."""
     score_label = f"Score ({method})"
+    if listed is None:
+        ranks = shown["rank"]
+        caption = f"{len(shown)} of {total} companies."
+    else:
+        ranks = [
+            rank_label(mine, listed, rank, total)
+            for mine, rank in zip(shown["shortlist_rank"], shown["rank"], strict=True)
+        ]
+        caption = (
+            f"{len(shown)} of {listed} shortlisted companies. Rank: in the shortlist · "
+            f"among all {total:,} companies."
+        )
     frame = pd.DataFrame(
         {
-            "Rank": shown["rank"],
+            "Rank": ranks,
             "Ticker": shown["ticker"],
             "Company": shown["filer_name"],
             "Sector": shown["sector"],
@@ -305,9 +381,7 @@ def ranking_table(
     )
     if reveal:
         frame["Return over next calendar year (%)"] = shown["next_year_return"]
-    st.caption(
-        f"{len(shown)} of {total} companies. Higher is safer or better. Click a row for its card."
-    )
+    st.caption(f"{caption} Higher is safer or better. Click a row for its card.")
     # A click on any cell selects its row. Without a key, the table's selection
     # starts empty whenever its rows change, so a position never points at a
     # company from an earlier filter. Widths keep every column in view.
@@ -318,7 +392,9 @@ def ranking_table(
         on_select="rerun",
         selection_mode="single-cell",
         column_config={
-            "Rank": st.column_config.NumberColumn(width=55, pinned=True),
+            "Rank": st.column_config.NumberColumn(width=55, pinned=True)
+            if listed is None
+            else st.column_config.TextColumn(width=140, pinned=True),
             "Ticker": st.column_config.TextColumn(width=60, pinned=True),
             "Company": st.column_config.TextColumn(width=170),
             "Sector": st.column_config.TextColumn(width=110),
@@ -497,13 +573,19 @@ def card(
     weights: dict[str, float],
     quotes: pd.DataFrame,
     layers: set[str],
+    listed: int | None,
 ) -> None:
     with st.container(border=True):
         st.subheader(f"{company['ticker']} · {company['filer_name']}")
         st.caption(f"{company['sector']} · fiscal {company['fiscal_year']}")
         rank_col, score_col = st.columns(2)
-        rank_col.metric("Rank", f"{company['rank']} of {total}")
+        if listed is None:
+            rank_col.metric("Rank", f"{company['rank']} of {total}")
+        else:
+            rank_col.metric("Rank in shortlist", f"{company['shortlist_rank']} of {listed}")
         score_col.metric(f"Score ({method})", score_text(company["score"], method))
+        if listed is not None:
+            st.caption(f"Rank among all companies: {company['rank']:,} of {total:,}.")
         if reveal:
             st.caption(f"Return over the next calendar year: {company['next_year_return']:+.1f}%")
         ratios, ml, text = st.tabs(["Ratios", "ML risk", "10-K text"])
@@ -527,8 +609,9 @@ def about() -> None:
             "between 0 and 1; the ideal and the scale are taken from the study's universe.\n\n"
             "Group weights are split equally over their criteria; a layer switched off "
             "gives its groups no weight and the rest are rescaled. The fixed profiles were "
-            "set before testing; custom weights were never tested. Filters only hide rows: "
-            "scores and ranks stay those of the whole year."
+            "set before testing; custom weights were never tested. A shortlist only picks "
+            "rows and filters only hide rows: scores and market-wide ranks stay those of "
+            "the whole year, and the shortlist's own rank follows the same order."
         )
 
 
@@ -548,18 +631,25 @@ if weights is None:
     st.stop()
 study_note(method, layers)
 
-# Scores and ranks are those of the whole year; filters then hide rows.
+# Scores and ranks are those of the whole year; the shortlist only picks rows,
+# and filters then hide rows.
 table = table.assign(score=score(table, weights, method))
-rows = table[table["fiscal_year"] == year].sort_values(
-    ["score", "ticker"], ascending=[False, True], na_position="last"
+rows = rank_rows(table[table["fiscal_year"] == year])
+on_shortlist = shortlist_panel(table)
+listed, missing = (
+    shortlist_rows(rows, st.session_state["shortlist"]) if on_shortlist else (rows, [])
 )
-rows["rank"] = range(1, len(rows) + 1)
-shown = filter_rows(rows, *filters(rows))
-summary(shown, reveal)
+shown = filter_rows(listed, *filters(rows))
+summary(shown, reveal, on_shortlist)
+size = len(listed) if on_shortlist else None
 
 left, right = st.columns([3, 2], gap="large")
 with left:
-    clicked = ranking_table(shown, method, reveal, len(rows))
+    if on_shortlist and not st.session_state["shortlist"]:
+        st.info("Add companies to the shortlist: search a ticker or name, or paste tickers.")
+    clicked = ranking_table(shown, method, reveal, len(rows), size)
+    if missing:
+        st.caption(not_in_year_line(missing, year))
 # Keyed by (cik, fiscal year), not row, so the card stays on its company as the
 # ranking re-sorts; it is always one of the rows shown.
 if clicked is not None:
@@ -568,11 +658,13 @@ with right:
     chosen = st.session_state.get("card")
     company = card_company(shown, chosen)
     if company is None:
-        st.info("No company matches the filters.")
+        st.info(
+            "No shortlisted company to show." if on_shortlist else "No company matches the filters."
+        )
     else:
         if chosen is not None and company_key(company) != chosen:
             st.caption("The company you chose is not among the rows shown: this is the first row.")
-        card(company, method, len(rows), reveal, criteria, weights, quotes, layers)
+        card(company, method, len(rows), reveal, criteria, weights, quotes, layers, size)
 
 about()
 st.divider()

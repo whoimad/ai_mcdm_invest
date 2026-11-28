@@ -2,9 +2,11 @@
 
 The table is one row per test-year company with enough ratios; `in_study`
 marks the study's evaluation universe. Scores come from the package's SAW and
-TOPSIS; filters only hide rows.
+TOPSIS; a shortlist only picks rows from the year's ranking, and filters only
+hide rows.
 """
 
+import re
 from collections.abc import Collection, Mapping, Sequence
 from pathlib import Path
 from typing import NamedTuple
@@ -118,6 +120,33 @@ def score(table: pd.DataFrame, weights: Mapping[str, float], method: str) -> pd.
     return topsis(table, weights, reference=table[table["in_study"]])
 
 
+def rank_rows(rows: pd.DataFrame) -> pd.DataFrame:
+    """One year's rows from the highest score, with their market-wide `rank`."""
+    rows = rows.sort_values(["score", "ticker"], ascending=[False, True], na_position="last")
+    return rows.assign(rank=range(1, len(rows) + 1))
+
+
+def shortlist_rows(rows: pd.DataFrame, shortlist: Sequence[str]) -> tuple[pd.DataFrame, list[str]]:
+    """The ranked rows of the shortlist's tickers, in the same order, with
+    their `shortlist_rank`; then the tickers with no row in `rows`.
+
+    Scores and market-wide ranks are kept: the shortlist only picks rows."""
+    mine = rows[rows["ticker"].isin(shortlist)]
+    present = set(mine["ticker"])
+    missing = [t for t in shortlist if t not in present]
+    return mine.assign(shortlist_rank=range(1, len(mine) + 1)), missing
+
+
+def rank_label(shortlist_rank: int, size: int, rank: int, total: int) -> str:
+    """A shortlist rank beside the market-wide rank, as "2 of 5 · 312 of 3,900"."""
+    return f"{shortlist_rank} of {size} · {rank:,} of {total:,}"
+
+
+def not_in_year_line(missing: Sequence[str], year: int) -> str:
+    """The line under the shortlist for its tickers with no row in `year`."""
+    return f"{', '.join(missing)}: not in fiscal {year} data."
+
+
 def filter_rows(
     rows: pd.DataFrame, sectors: Collection[str], statuses: Collection[str], search: str
 ) -> pd.DataFrame:
@@ -134,6 +163,25 @@ def filter_rows(
             "filer_name"
         ].str.lower().str.contains(text, regex=False)
     return rows[kept]
+
+
+def parse_tickers(text: str) -> list[str]:
+    """The tickers of a pasted list (commas, semicolons or spaces between),
+    in capitals, each once, in the order given."""
+    return list(dict.fromkeys(t.upper() for t in re.split(r"[\s,;]+", text) if t))
+
+
+def company_choices(table: pd.DataFrame) -> dict[str, str]:
+    """Each ticker of `table`, sorted, with its label "TICKER · name": the
+    shortlist's search box matches the label, so by ticker or by name."""
+    names = table.drop_duplicates(["ticker", "filer_name"]).groupby("ticker")["filer_name"]
+    return {ticker: f"{ticker} · {' / '.join(group)}" for ticker, group in names}
+
+
+def split_known(table: pd.DataFrame, tickers: Sequence[str]) -> tuple[list[str], list[str]]:
+    """The tickers found in `table` (either test year), then the others."""
+    found = set(table["ticker"])
+    return [t for t in tickers if t in found], [t for t in tickers if t not in found]
 
 
 def tail_shares(rows: pd.DataFrame) -> dict[str, float] | None:

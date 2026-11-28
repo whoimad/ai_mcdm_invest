@@ -1,5 +1,6 @@
 """The screener page runs without exception on every year, method, profile and
-layer switched off, with custom weights, with filters and with a card opened.
+layer switched off, with custom weights, with filters, with a card opened and
+in shortlist mode.
 
 Kept out of CI (it needs the processed tables); run with `make test-slow`.
 """
@@ -181,3 +182,80 @@ def test_the_card_is_one_of_the_rows_shown(app: AppTest, table: pd.DataFrame) ->
 
 def test_tail_loss_values_are_in_the_table(app: AppTest) -> None:
     assert app.dataframe[0].value["Tail-loss probability (%)"].notna().mean() > 0.9
+
+
+def shortlist(at: AppTest, pasted: str) -> pd.DataFrame:
+    """Switches to shortlist mode, pastes the tickers and returns the table shown."""
+    at.button_group(key="mode").set_value("shortlist")
+    run(at)
+    at.text_input(key="paste").set_value(pasted)
+    run(at)
+    return at.dataframe[0].value
+
+
+def test_a_pasted_list_is_ranked_in_the_full_ranking_s_order(app: AppTest) -> None:
+    full = app.dataframe[0].value
+    order = full[full["Ticker"].isin(["AAPL", "MSFT", "F"])]
+
+    shown = shortlist(app, "aapl, MSFT F")
+
+    assert shown["Ticker"].tolist() == order["Ticker"].tolist()
+    assert shown["Rank"].tolist() == [
+        f"{k} of 3 · {rank:,} of 3,900" for k, rank in enumerate(order["Rank"], start=1)
+    ]
+    assert app.metric[0].label == "Shortlisted companies shown"
+    assert app.metric[0].value == "3"
+    # The card is one of the shortlist's rows.
+    assert app.subheader[0].value.startswith(f"{shown['Ticker'].iloc[0]} · ")
+
+
+def test_the_search_box_adds_companies(app: AppTest) -> None:
+    shortlist(app, "")
+    app.multiselect(key="shortlist_box").set_value(["CSX", "AAPL"])
+    run(app)
+
+    assert sorted(app.dataframe[0].value["Ticker"]) == ["AAPL", "CSX"]
+
+
+def test_an_unknown_ticker_is_listed_back(app: AppTest) -> None:
+    shown = shortlist(app, "AAPL, NOSUCH")
+
+    assert shown["Ticker"].tolist() == ["AAPL"]
+    assert "NOSUCH" in app.warning[0].value
+
+
+def test_the_shortlist_is_kept_across_years_and_modes(app: AppTest) -> None:
+    # AHC has a row in fiscal 2017 only.
+    assert sorted(shortlist(app, "AHC, AAPL")["Ticker"]) == ["AAPL", "AHC"]
+
+    app.button_group(key="year").set_value(2018)
+    run(app)
+    assert app.dataframe[0].value["Ticker"].tolist() == ["AAPL"]
+    assert any(c.value == "AHC: not in fiscal 2018 data." for c in app.caption)
+
+    app.button_group(key="mode").set_value("all")
+    run(app)
+    assert len(app.dataframe[0].value) == 3876
+    app.button_group(key="mode").set_value("shortlist")
+    run(app)
+    assert app.multiselect(key="shortlist_box").value == ["AHC", "AAPL"]
+
+
+def test_custom_weights_and_filters_re_sort_the_shortlist_only(app: AppTest) -> None:
+    app.slider(key="weight_valuation").set_value(80)
+    app.button_group(key="method").set_value("TOPSIS")
+    run(app)
+    full = app.dataframe[0].value
+    tickers = ["AAPL", "MSFT", "F", "CSX", "XOM"]
+    order = full[full["Ticker"].isin(tickers)]
+
+    shown = shortlist(app, ", ".join(tickers))
+    assert shown["Ticker"].tolist() == order["Ticker"].tolist()
+    assert shown["Score (TOPSIS)"].tolist() == order["Score (TOPSIS)"].tolist()
+
+    # A filter hides rows; ranks and scores stay.
+    app.multiselect(key="sectors").set_value(["Technology"])
+    run(app)
+    filtered = app.dataframe[0].value
+    assert 0 < len(filtered) < 5
+    assert set(filtered["Rank"]) <= set(shown["Rank"])

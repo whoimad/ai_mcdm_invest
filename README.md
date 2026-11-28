@@ -64,6 +64,18 @@ The top bar holds:
   rows (ratios only, + ML, + LLM) the page says the scores match the study's;
   on Custom it says the weights are not part of the study's tests.
 
+**Show** switches between "All companies" and "My shortlist". Companies join
+the shortlist through a search box (ticker or name, several allowed) or by
+pasting tickers (`AAPL, MSFT, F`, then Enter); tickers found in neither test
+year are listed back. The shortlist is kept by ticker, so it lasts when the
+year, method, profile, weights, layers or mode change; a ticker held by
+several companies that year shows each. Scores stay market-wide, as in the
+study: the shortlist only picks rows from the year's ranking, ranked 1 to n in
+the same order, with the market-wide rank beside it ("2 of 5 · 312 of
+3,900"). A shortlisted company with no row that year is listed under the table
+as "not in fiscal 2018 data" (for the year chosen). The filters, the summary
+cards and the card then apply to the shortlist.
+
 Filters (sector, going-concern status, ticker or name) only hide rows: scores
 and ranks stay those of the whole year. Clicking any cell of a row opens its
 card; the card follows the company (cik and fiscal year), not the row, and is

@@ -1,4 +1,4 @@
-"""The screener's logic: scores, filters and the summary of the rows shown."""
+"""The screener's logic: scores, the shortlist, filters and the summary of the rows shown."""
 
 import pandas as pd
 import pytest
@@ -9,9 +9,16 @@ from ai_mcdm_invest.screener import (
     LLM_ONLY,
     card_company,
     clicked_company,
+    company_choices,
     edgar_url,
     filter_rows,
+    not_in_year_line,
+    parse_tickers,
+    rank_label,
+    rank_rows,
     score,
+    shortlist_rows,
+    split_known,
     study_layer_row,
     tail_shares,
     text_evidence,
@@ -194,3 +201,88 @@ def test_no_disagreement_without_an_llm_verdict(status: str) -> None:
 
     assert evidence.disagreement is None
     assert evidence.keyword_flag is (True if status == "extraction_failed" else None)
+
+
+@pytest.mark.parametrize(
+    "text", ["AAPL, MSFT, F", "aapl msft f", " AAPL;MSFT\nf ", "AAPL, msft, AAPL, F"]
+)
+def test_a_pasted_list_gives_its_tickers_once_in_order(text: str) -> None:
+    assert parse_tickers(text) == ["AAPL", "MSFT", "F"]
+
+
+def test_pasted_tickers_split_into_known_and_unknown() -> None:
+    known, unknown = split_known(TABLE, ["CCC", "ZZZ", "AAA", "QQ"])
+
+    assert known == ["CCC", "AAA"]
+    assert unknown == ["ZZZ", "QQ"]
+
+
+def test_the_search_box_offers_each_ticker_once_with_its_names() -> None:
+    # The search box matches the label, so a ticker or a name finds a company;
+    # a ticker held by two companies names both.
+    table = pd.DataFrame(
+        {
+            "ticker": ["BBB", "AAA", "AAA", "BBB", "CCC"],
+            "filer_name": ["Beta Inc", "Alpha Corp", "Alpha Corp", "Beta Two", "Gamma Co"],
+        }
+    )
+
+    assert company_choices(table) == {
+        "AAA": "AAA · Alpha Corp",
+        "BBB": "BBB · Beta Inc / Beta Two",
+        "CCC": "CCC · Gamma Co",
+    }
+
+
+def ranked(method: str) -> pd.DataFrame:
+    """The whole year ranked by `method`, as the page ranks it."""
+    return rank_rows(TABLE.assign(fiscal_year=2017, score=score(TABLE, WEIGHTS, method)))
+
+
+def test_the_full_ranking_runs_from_the_highest_score() -> None:
+    rows = ranked("SAW")
+
+    assert rows["ticker"].tolist() == ["EEE", "AAA", "BBB", "DDD", "CCC"]
+    assert rows["rank"].tolist() == [1, 2, 3, 4, 5]
+
+
+@pytest.mark.parametrize("method", ["SAW", "TOPSIS"])
+def test_the_shortlist_keeps_the_full_ranking_s_order_and_scores(method: str) -> None:
+    rows = ranked(method)
+
+    mine, missing = shortlist_rows(rows, ["CCC", "AAA", "EEE", "BBB"])
+
+    full_order = [t for t in rows["ticker"] if t in {"CCC", "AAA", "EEE", "BBB"}]
+    assert mine["ticker"].tolist() == full_order
+    assert mine["shortlist_rank"].tolist() == [1, 2, 3, 4]
+    assert mine["score"].tolist() == rows.set_index("ticker").loc[full_order, "score"].tolist()
+    assert mine["rank"].tolist() == rows.set_index("ticker").loc[full_order, "rank"].tolist()
+    assert missing == []
+
+
+def test_a_shortlisted_ticker_with_no_row_that_year_is_listed_apart() -> None:
+    rows = ranked("SAW")
+
+    mine, missing = shortlist_rows(rows, ["ZZZ", "AAA", "YYY"])
+
+    assert mine["ticker"].tolist() == ["AAA"]
+    assert missing == ["ZZZ", "YYY"]
+    assert not_in_year_line(missing, 2018) == "ZZZ, YYY: not in fiscal 2018 data."
+
+
+def test_a_ticker_held_by_two_companies_shows_both() -> None:
+    rows = rank_rows(
+        pd.DataFrame(
+            {"cik": [1, 2, 3], "fiscal_year": 2017, "ticker": ["AAA", "AAA", "BBB"],
+             "score": [0.2, 0.9, 0.5]}
+        )
+    )  # fmt: skip
+
+    mine, _ = shortlist_rows(rows, ["AAA"])
+
+    assert mine["cik"].tolist() == [2, 1]
+    assert mine["shortlist_rank"].tolist() == [1, 2]
+
+
+def test_a_shortlist_rank_is_given_beside_the_market_wide_rank() -> None:
+    assert rank_label(2, 5, 312, 3900) == "2 of 5 · 312 of 3,900"
