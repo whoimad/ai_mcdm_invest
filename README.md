@@ -44,14 +44,15 @@ package's own weights and SAW, so it is the score the study ranks it by.
   2019". Companies are ranked on their fiscal-year data; the reveal (off by
   default) shows the return over the next calendar year.
 - **Profile**: balanced, risk-averse or value-minded, as in the table above.
-- **Layers**: ratios, ML risk score, 10-K text. A layer switched off loses its
+- **Layers**: ratios, ML risk model, 10-K text. A layer switched off loses its
   weight and the rest are rescaled. The text layer is greyed out until the
   test-year going-concern run has written its tables.
 - **Sector**: ranks one sector's companies only.
 
 The company card shows each ratio's scored market-wide percentile with its
-sector percentile beside it (context, not scored), the five largest
-contributions to the ML risk score (from `ml_risk`), and the going-concern
+sector percentile beside it (context, not scored), the ML safety percentile
+(higher is safer) with the tail-loss probability it comes from, the five
+largest contributions to that probability (from `ml_risk`), and the going-concern
 result: the auditor's quoted paragraph when flagged, "no flags" when clear,
 and "text not available" with the reason otherwise (no 10-K found, not in the
 corpus, no audit report, extraction failed). Only scored facts are shown.

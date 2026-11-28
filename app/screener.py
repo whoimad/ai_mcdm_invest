@@ -22,7 +22,7 @@ from ai_mcdm_invest.ml.risk_score import ML_GROUP, ML_SCORE_COLUMN, TOP_CONTRIBU
 
 # The two test years; each next-year return runs over the calendar year after.
 AS_OF = {2017: "Fiscal 2017, returns over 2018", 2018: "Fiscal 2018, returns over 2019"}
-LAYER_LABELS = {"ratios": "Ratios", "ml": "ML risk score", "text": "10-K text (LLM)"}
+LAYER_LABELS = {"ratios": "Ratios", "ml": "ML risk model", "text": "10-K text (LLM)"}
 GROUP_LABELS = {
     "profitability": "Profitability",
     "valuation": "Valuation",
@@ -78,7 +78,9 @@ def load(processed: str) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, str], bo
     filings = pd.read_parquet(
         path / "filings.parquet", columns=[*KEY, "accession", "in_corpus", "no_report"]
     )
-    ml = pd.read_parquet(path / "ml_criterion.parquet", columns=[*KEY, ML_SCORE_COLUMN])
+    ml = pd.read_parquet(
+        path / "ml_criterion.parquet", columns=[*KEY, ML_SCORE_COLUMN, "tail_loss_probability"]
+    )
     contributions = pd.read_parquet(path / "ml_risk.parquet").drop(columns="tail_loss_probability")
     table = (
         table.merge(panel, on=KEY, how="left", validate="one_to_one")
@@ -179,7 +181,8 @@ shown = pd.DataFrame(
         "Sector": ranked["sector"],
         "Score": 100 * ranked["score"],
         "Ratios": 100 * ranked["ratio_score"],
-        "ML risk score": 100 * ranked[ML_SCORE_COLUMN],
+        "ML safety (percentile)": 100 * ranked[ML_SCORE_COLUMN],
+        "Tail-loss probability (%)": 100 * ranked["tail_loss_probability"],
         "Going concern": ranked["status"].map(STATUS_LABELS),
     }
 )
@@ -199,7 +202,8 @@ with left:
         column_config={
             "Score": st.column_config.ProgressColumn(format="%.1f", min_value=0, max_value=100),
             "Ratios": st.column_config.NumberColumn(format="%.0f"),
-            "ML risk score": st.column_config.NumberColumn(format="%.0f"),
+            "ML safety (percentile)": st.column_config.NumberColumn(format="%.0f"),
+            "Tail-loss probability (%)": st.column_config.NumberColumn(format="%.1f"),
             "Return over next calendar year (%)": st.column_config.NumberColumn(format="%+.1f"),
         },
     )
@@ -237,7 +241,8 @@ with right:
     st.dataframe(pd.DataFrame(ratio_rows), hide_index=True)
 
     st.markdown(
-        f"**ML risk score: {pct(company[ML_SCORE_COLUMN])}**"
+        f"**ML safety: {pct(company[ML_SCORE_COLUMN])}** (percentile, higher is safer; "
+        f"tail-loss probability {100 * company['tail_loss_probability']:.1f}%)"
         + ("" if "ml" in layers else " (layer off)")
     )
     contributions = [
@@ -247,8 +252,9 @@ with right:
     ]
     if contributions:
         st.caption(
-            f"The {len(contributions)} largest contributions to the score, in log-odds of a "
-            "tail loss (SHAP values from the model's own output)."
+            f"The {len(contributions)} largest contributions to the tail-loss probability, in "
+            "log-odds (SHAP values from the model's own output). A contribution that raises "
+            "risk lowers the safety percentile."
         )
         st.dataframe(
             pd.DataFrame(
