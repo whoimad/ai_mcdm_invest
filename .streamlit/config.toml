@@ -1,10 +1,10 @@
-# The screener's theme: one colour for safety (primary) and plain neutrals.
+# The screener's theme: dark, one colour for safety (primary) and plain neutrals.
 [theme]
-base = "light"
-primaryColor = "#0072B2"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F3F5F8"
-textColor = "#1F2933"
+base = "dark"
+primaryColor = "#56B4E9"
+backgroundColor = "#0F1419"
+secondaryBackgroundColor = "#1A2129"
+textColor = "#E6E9EE"
 
 [browser]
 gatherUsageStats = false

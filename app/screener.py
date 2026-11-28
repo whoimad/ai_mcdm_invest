@@ -76,10 +76,11 @@ STATUS_LABELS = {
     NOT_READ: "Not read",
     NO_RUN: "Not available",
 }
-# One colour for risk and one for safety, used throughout (colour-blind safe).
-RISK = "#D55E00"
-SAFETY = "#0072B2"
-NEUTRAL = "#8C8C8C"
+# One colour for risk and one for safety, used throughout (colour-blind safe, tuned for
+# the dark theme).
+RISK = "#F0834A"
+SAFETY = "#56B4E9"
+NEUTRAL = "#9AA3AD"
 STATUS_COLOURS = {FLAGGED: RISK, CLEAR: SAFETY}
 # SAW is a weighted mean of percentiles, shown 0 to 100; TOPSIS a closeness, 0 to 1.
 SCALE = {"SAW": 100.0, "TOPSIS": 1.0}
@@ -102,7 +103,7 @@ def pct(value: float) -> str:
 def label(text: str, colour: str) -> str:
     """A coloured label, for inline markdown."""
     return (
-        f'<span style="background:{colour};color:white;border-radius:0.4rem;'
+        f'<span style="background:{colour};color:#0F1419;border-radius:0.4rem;'
         f'padding:0.1rem 0.5rem;font-size:0.85rem">{html.escape(text)}</span>'
     )
 
