@@ -1,4 +1,4 @@
-.PHONY: all results figures notebook fetch manifest test test-slow lint check
+.PHONY: all results screener figures notebook fetch manifest test test-slow lint check
 
 # Rebuild every derived table and figure from raw data.
 # Raw data is read from AI_MCDM_RAW_DIR (default: ~/maids/data).
@@ -11,6 +11,11 @@ all:
 # the run's tables are missing. Calls no model.
 results:
 	uv run python -m ai_mcdm_invest.evaluation.results
+
+# The screener: the study's ranking on the two test years, with a company card,
+# in the browser. Reads the tables `make all` and `make results` read; calls no model.
+screener:
+	uv run streamlit run app/screener.py --browser.gatherUsageStats false
 
 # Redraw the figures from the tables `make all` wrote, without rebuilding them.
 figures:

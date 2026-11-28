@@ -25,12 +25,41 @@ uv sync
 | `make manifest` | Records the raw files the study is built on in `raw_manifest.json` (only to adopt new raw data on purpose) |
 | `make all` | Checks the raw files against `raw_manifest.json`, then rebuilds every derived table and figure, offline |
 | `make results` | After `make all` and the test-year going-concern run: the "+ LLM" ablation row, the three likelihood-ratio tests and the tables beside them, into `data/processed/test_year_*` and `data/reports/test_year_results.md` |
+| `make screener` | Opens the screener in the browser: the study's ranking on the two test years, with a company card (see below) |
 | `make figures` | Redraws the figures from the tables `make all` wrote, without rebuilding them |
 | `make notebook` | Reruns the data notebook from those tables and figures and saves its outputs; kept out of CI |
 | `make test` | Runs the test suite (needs neither the raw data nor a GPU) |
 | `make test-slow` | Runs the acceptance checks on the real raw data (fiscal 2017 join, 10-K coverage, the ML model's AUC); kept out of CI |
 | `make lint` | Runs the linter, the format check and the type checker |
 | `make check` | `lint` and `test` together; what CI runs |
+
+## Screener
+
+`make screener` (or `uv run streamlit run app/screener.py`) opens a
+read-only view of the study's ranking in the browser. It reads the tables in
+`data/processed` and calls no model. Each company's score comes from the
+package's own weights and SAW, so it is the score the study ranks it by.
+
+- **As of**: "Fiscal 2017, returns over 2018" or "Fiscal 2018, returns over
+  2019". Companies are ranked on their fiscal-year data; the reveal (off by
+  default) shows the return over the next calendar year.
+- **Profile**: balanced, risk-averse or value-minded, as in the table above.
+- **Layers**: ratios, ML risk score, 10-K text. A layer switched off loses its
+  weight and the rest are rescaled. The text layer is greyed out until the
+  test-year going-concern run has written its tables.
+- **Sector**: ranks one sector's companies only.
+
+The company card shows each ratio's scored market-wide percentile with its
+sector percentile beside it (context, not scored), the five largest
+contributions to the ML risk score (from `ml_risk`), and the going-concern
+result: the auditor's quoted paragraph when flagged, "no flags" when clear,
+and "text not available" with the reason otherwise (no 10-K found, not in the
+corpus, no audit report, extraction failed). Only scored facts are shown.
+
+The screener lists every test-year company with enough ratios; the study's
+measures use only those whose 10-K text is readable. It ranks scored facts
+under fixed weights: it does not recommend buying any stock and does not
+forecast returns.
 
 ## Data
 
